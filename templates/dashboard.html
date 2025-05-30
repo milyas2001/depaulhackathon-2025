@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    />
+
+    <title>Dental Notes - Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </head>
+  <body>
+    <div class="relative flex size-full min-h-screen flex-col bg-[#141414] dark group/design-root overflow-x-hidden" style='font-family: Manrope, "Noto Sans", sans-serif;'>
+      <div class="layout-container flex h-full grow flex-col">
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#303030] px-10 py-3">
+          <div class="flex items-center gap-4 text-white">
+            <div class="size-4">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z"
+                  fill="currentColor"
+                ></path>
+              </svg>
+            </div>
+            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Dental Notes</h2>
+          </div>
+          <div class="flex flex-1 justify-end gap-8">
+            <div class="flex items-center gap-9">
+              <a class="text-white text-sm font-medium leading-normal" href="/">Dashboard</a>
+              <a class="text-white text-sm font-medium leading-normal" href="/patients">Patients</a>
+              <a class="text-white text-sm font-medium leading-normal" href="#">Notes</a>
+              <a class="text-white text-sm font-medium leading-normal" href="#">Settings</a>
+            </div>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-ZHU9iSG-GvNjLz4EL6xUmAsW3rCaOpcl7bWOX_FjMShd3WtJ8wnPOAWZoZfHpexMuAmv6EC6h7hLiFvuoOW2rbJJ8PcnypaBK4fWwWTouAebEvyMGBZIq2r2riZOr234mKjyH0iHfUZc3Dryfq80WKiRcxsr7KMLC-vqpqxUIQexoTKOU9xVBZUhN2ad2TZB1fuLrbPOOSpmLqoEoQU1thbSEROkG7Rdj88Xmv66XJvn73DFkuBu0qUfoHz6vXbFXjlM2O-2dik");'
+            ></div>
+          </div>
+        </header>
+        <div class="px-40 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+            <!-- Quick Actions Section -->
+            <div class="flex flex-wrap gap-4 p-4 mb-8">
+              <a href="/patients" class="flex items-center gap-2 text-white bg-[#303030] rounded-xl px-4 py-3 hover:bg-[#404040] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                  <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"></path>
+                </svg>
+                <span>View All Patients</span>
+              </a>
+              <a href="/patients" class="flex items-center gap-2 text-white bg-[#303030] rounded-xl px-4 py-3 hover:bg-[#404040] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                  <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
+                </svg>
+                <span>Search Existing Patients</span>
+              </a>
+            </div>
+
+            <div class="flex flex-wrap justify-between gap-3 p-4">
+              <p class="text-white tracking-light text-[32px] font-bold leading-tight min-w-72">Add New Patient</p>
+            </div>
+            <p class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4">
+              Enter the details below to register a new patient and start recording clinical notes.
+            </p>
+            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+              <label class="flex flex-col min-w-40 flex-1">
+                <span class="text-white text-sm font-medium leading-normal mb-2">Patient Name</span>
+                <input
+                  type="text"
+                  id="patientName"
+                  class="form-input flex w-full min-w-0 flex-1 overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#303030] focus:border-none h-10 placeholder:text-[#ababab] px-4 text-base font-normal leading-normal"
+                  placeholder="Enter patient name"
+                />
+              </label>
+              <label class="flex flex-col min-w-32">
+                <span class="text-white text-sm font-medium leading-normal mb-2">Patient ID</span>
+                <input
+                  type="text"
+                  id="patientId"
+                  class="form-input flex w-full min-w-0 flex-1 overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#303030] focus:border-none h-10 placeholder:text-[#ababab] px-4 text-base font-normal leading-normal"
+                  placeholder="Enter ID"
+                />
+              </label>
+            </div>
+            <div class="flex px-4 py-3">
+              <button
+                id="startNoteTaking"
+                disabled
+                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#303030] text-white text-sm font-bold leading-normal tracking-[0.015em] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span class="truncate">Register & Start Note</span>
+              </button>
+            </div>
+
+            <!-- Recently Added Patients Section -->
+            <div class="mt-8">
+              <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3">Recently Added Patients</h2>
+              <div class="grid grid-cols-1 gap-4 px-4">
+                <!-- Recent patients will be dynamically added here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html> 
