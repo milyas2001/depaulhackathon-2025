@@ -5,135 +5,64 @@ import tempfile
 import soundfile as sf
 import numpy as np
 from scipy import signal
-from transformers import pipeline
-from ctransformers import AutoModelForCausalLM
+from llm_handler import DentalNoteGenerator
 
 app = Flask(__name__)
 
 # Load Whisper model globally (using base model for faster startup)
 whisper_model = whisper.load_model("base")
 
-# Initialize the LLM for clinical note generation
-def initialize_llm():
-    try:
-        # Using Llama-2-7b-chat model with medical knowledge
-        llm = AutoModelForCausalLM.from_pretrained(
-            "TheBloke/Llama-2-7B-Chat-GGML",
-            model_file="llama-2-7b-chat.ggmlv3.q4_0.bin",
-            model_type="llama",
-            max_new_tokens=512,
-            context_length=2048,
-            temperature=0.7
-        )
-        return llm
-    except Exception as e:
-        print(f"Error loading LLM: {str(e)}")
-        return None
+# Initialize the LLM note generator lazily
+note_generator = None
 
-llm = initialize_llm()
+def get_note_generator():
+    global note_generator
+    if note_generator is None:
+        note_generator = DentalNoteGenerator()
+    return note_generator
 
 def generate_clinical_note(input_text):
     """
-    Uses LLM to generate a detailed clinical note from the input text.
+    Generate a clinical note using the LLM. Falls back to template if LLM fails.
     """
     try:
-        # Prompt engineering for clinical note generation
-        prompt = f"""You are a dental documentation assistant. Convert the following informal dental notes into a formal, detailed clinical note.
-        Use proper dental terminology and maintain a professional tone.
-        
-        Format the note with these sections:
-        1. DENTAL CLINICAL NOTE with current date
-        2. PROCEDURE TYPE (identify from the input)
-        3. CLINICAL NARRATIVE (detailed paragraph about the procedure)
-        4. ASSESSMENT (clinical evaluation)
-        5. PLAN AND RECOMMENDATIONS (comprehensive paragraph)
-        
-        Input notes:
-        {input_text}
-        
-        Generate a formal clinical note:"""
+        # Try generating with LLM first
+        generator = get_note_generator()
+        if generator.is_available():
+            llm_note = generator.generate_note(input_text)
+            if llm_note:
+                return llm_note
 
-        # Generate response using the LLM
-        if llm:
-            response = llm(prompt)
-            return response
-        else:
-            # Fallback to template-based generation if LLM fails
-            return fallback_generate_note(input_text)
+        # Fallback to template-based generation
+        return fallback_generate_note(input_text)
 
     except Exception as e:
-        print(f"Error generating clinical note: {str(e)}")
+        print(f"Error in note generation: {str(e)}")
         return fallback_generate_note(input_text)
 
 def fallback_generate_note(input_text):
     """
-    Fallback template-based note generation if LLM fails.
+    Template-based note generation as fallback
     """
-    # Extract procedure type and details
-    procedure_type = "Dental Procedure"  # Default
-    if "extraction" in input_text.lower():
-        procedure_type = "Tooth Extraction"
-    elif "root canal" in input_text.lower():
-        procedure_type = "Root Canal Treatment"
-    elif "filling" in input_text.lower():
-        procedure_type = "Dental Restoration"
-    elif "cleaning" in input_text.lower():
-        procedure_type = "Dental Prophylaxis"
-    
-    # Format the note with detailed procedure description
-    note = f"""DENTAL CLINICAL NOTE
+    try:
+        note = f"""DENTAL CLINICAL NOTE
 Date: {os.popen('date').read().strip()}
 
-PROCEDURE TYPE: {procedure_type}
+PROCEDURE TYPE:
+{'Tooth Extraction' if 'extract' in input_text.lower() else 'Dental Procedure'}
 
 CLINICAL NARRATIVE:
-{elaborate_procedure(input_text)}
+{input_text}
 
 ASSESSMENT:
 Clinical evaluation completed. Patient's condition and procedure outcomes were assessed.
 
 PLAN AND RECOMMENDATIONS:
-Patient was provided with comprehensive post-operative instructions for optimal recovery. A follow-up appointment will be scheduled as appropriate for the procedure performed. Necessary medications were prescribed based on the treatment requirements. The patient was thoroughly informed about potential post-procedure symptoms and advised to contact our office immediately if experiencing any concerning symptoms or complications. All questions were addressed, and written instructions were provided for home care management.
+Patient was provided with comprehensive post-operative instructions for optimal recovery. A follow-up appointment will be scheduled as appropriate for the procedure performed. Necessary medications were prescribed based on the treatment requirements. The patient was thoroughly informed about potential post-procedure symptoms and advised to contact our office immediately if experiencing any concerning symptoms or complications."""
 
-Note: This clinical documentation was generated from provider input and formatted according to standard clinical documentation practices."""
-
-    return note
-
-def elaborate_procedure(input_text):
-    """
-    Elaborates on the procedure details based on the input text.
-    Converts shorthand notes into detailed clinical narrative.
-    """
-    # Convert common shorthand terms
-    text = input_text.lower()
-    
-    if "extraction" in text:
-        details = []
-        
-        # Anesthesia details
-        if "lidocaine" in text or "lido" in text:
-            details.append("Local anesthesia was administered using 2% Lidocaine with 1:100,000 epinephrine.")
-        
-        # Extraction details
-        if "partial bony" in text:
-            details.append("The extraction was identified as a partial bony removal, requiring careful management of bone and soft tissue.")
-        
-        # Mucoperiosteal flap
-        if "mucoperi" in text or "flap" in text:
-            details.append("A mucoperiosteal flap was carefully elevated to access the surgical site.")
-        
-        # Irrigation
-        if "irrigat" in text:
-            details.append("The socket was thoroughly irrigated to ensure removal of any debris.")
-            
-        # Additional details from input
-        details.append(f"Additional procedure notes: {input_text}")
-        
-        # Combine all details into a coherent paragraph
-        return " ".join(details)
-    
-    # For other types of procedures, return the original text with basic formatting
-    return f"The following procedure was performed: {input_text}"
+        return note
+    except Exception as e:
+        return f"Error generating note: {str(e)}"
 
 @app.route('/')
 def index():
@@ -202,7 +131,7 @@ def process_audio():
                         
                         # Get the transcribed text
                         transcribed_text = result["text"].strip()
-                        print(f"Transcribed text: {transcribed_text}")  # Debug log
+                        print(f"Transcribed text: {transcribed_text}")
                         
                         if not transcribed_text:
                             return "No speech detected in the audio. Please try again.", 400
@@ -231,4 +160,4 @@ def process_audio():
         return f"Error processing your request: {str(e)}", 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5004) 
+    app.run(host='0.0.0.0', port=5005, debug=False) 
