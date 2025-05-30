@@ -1,5 +1,6 @@
 let mediaRecorder;
 let audioChunks = [];
+let isRecording = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     const recordButton = document.getElementById('recordButton');
@@ -17,27 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (noteForm) {
-        noteForm.onsubmit = async function(event) {
-            event.preventDefault();
-            formattedNoteOutput.textContent = 'Processing...';
-            const formData = new FormData(noteForm);
-            let response;
-
+        noteForm.onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
             try {
-                response = await fetch('/process_audio', {
+                const response = await fetch('/process_audio', {
                     method: 'POST',
                     body: formData
                 });
-
-                if (response.ok) {
-                    const resultText = await response.text();
-                    formattedNoteOutput.textContent = resultText;
-                } else {
-                    formattedNoteOutput.textContent = `Error: ${response.status} ${await response.text()}`;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const result = await response.text();
+                document.getElementById('formatted_note_output').textContent = result;
             } catch (error) {
-                console.error('Error submitting form:', error);
-                formattedNoteOutput.textContent = 'Error processing your request. Please try again.';
+                console.error('Error:', error);
+                document.getElementById('formatted_note_output').textContent = 'Error processing input: ' + error.message;
             }
         };
     }
@@ -47,51 +46,86 @@ async function startRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
-
-        audioChunks = []; // Reset chunks for new recording
-        mediaRecorder.addEventListener("dataavailable", event => {
+        
+        mediaRecorder.ondataavailable = (event) => {
             audioChunks.push(event.data);
-        });
+        };
 
-        mediaRecorder.addEventListener("stop", () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); // Or 'audio/webm' or other supported types
-            const audioUrl = URL.createObjectURL(audioBlob);
-            // For debugging: const audio = new Audio(audioUrl);
-            // audio.play();
-
-            // Create a File object from the Blob
-            const audioFile = new File([audioBlob], "recorded_audio.wav", {type: 'audio/wav'});
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('audio_data', audioBlob, 'recording.wav');
             
-            // Put the recorded audio into the file input
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(audioFile);
-            document.getElementById('audio_data').files = dataTransfer.files;
+            try {
+                const response = await fetch('/process_audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.text();
+                document.getElementById('formatted_note_output').textContent = result;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('formatted_note_output').textContent = 'Error processing audio: ' + error.message;
+            }
+            
+            // Reset for next recording
+            audioChunks = [];
+        };
 
-            // Optionally, submit the form automatically or enable a submit button
-            // document.getElementById('noteForm').submit(); 
-        });
-
+        // Start recording
+        mediaRecorder.start();
+        isRecording = true;
+        
+        // Update UI
         document.getElementById('recordButton').disabled = true;
         document.getElementById('stopButton').disabled = false;
-        document.getElementById('text_input').disabled = true; // Disable text input during recording
-        document.getElementById('audio_data').disabled = true; // Disable file upload during recording
-        console.log("Recording started");
-    } catch (err) {
-        console.error("Error starting recording: ", err);
-        alert("Could not start recording. Please ensure you have a microphone and have granted permission.");
+        document.getElementById('formatted_note_output').textContent = 'Recording...';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('formatted_note_output').textContent = 'Error accessing microphone: ' + error.message;
     }
 }
 
 function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
+    if (mediaRecorder && isRecording) {
         mediaRecorder.stop();
-        // The "stop" event listener for mediaRecorder will handle the audio blob creation.
-        console.log("Recording stopped");
+        isRecording = false;
+        
+        // Update UI
+        document.getElementById('recordButton').disabled = false;
+        document.getElementById('stopButton').disabled = true;
+        document.getElementById('formatted_note_output').textContent = 'Processing audio...';
+        
+        // Stop all audio tracks
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
-    document.getElementById('recordButton').disabled = false;
-    document.getElementById('stopButton').disabled = true;
-    document.getElementById('text_input').disabled = false;
-    document.getElementById('audio_data').disabled = false;
+}
 
-} 
+// Handle form submission for text input
+document.getElementById('noteForm').onsubmit = async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    try {
+        const response = await fetch('/process_audio', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.text();
+        document.getElementById('formatted_note_output').textContent = result;
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('formatted_note_output').textContent = 'Error processing input: ' + error.message;
+    }
+}; 

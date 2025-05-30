@@ -1,1 +1,8 @@
-Flask>=2.0 
+Flask>=2.0
+openai-whisper
+torch
+numpy
+soundfile
+scipy
+transformers
+ctransformers 
