@@ -1,0 +1,427 @@
+/* General Body Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa; /* Very light grey - clean and modern */
+    color: #212529; /* Darker text for better contrast */
+    line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scroll if animations cause overflow */
+}
+
+/* Keyframe Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes subtlePulse {
+    0% { box-shadow: 0 5px 15px rgba(0, 169, 224, 0.3); }
+    50% { box-shadow: 0 8px 25px rgba(0, 169, 224, 0.5); }
+    100% { box-shadow: 0 5px 15px rgba(0, 169, 224, 0.3); }
+}
+
+/* Landing Page Specific Styles */
+.landing-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Center content vertically */
+    min-height: 100vh;
+    text-align: center;
+    padding: 40px 20px; /* Increased padding */
+    background-color: #1a1a2e; /* Dark AI-themed background */
+    color: #e0e0e0; /* Light text for dark background */
+    position: relative; /* For pseudo-elements */
+    overflow: hidden; /* To contain animated pseudo-elements */
+}
+
+/* Pseudo-element for animated background shapes/gradients */
+.landing-container::before, 
+.landing-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Behind content but above plain background */
+    /* Replace with your actual image paths in static/images/ */
+    /* background-image: url("{{ url_for('static', filename='images/ai_background_pattern_1.png') }}"); */ 
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0.05; /* Very subtle */
+}
+
+/* Example subtle animation for pseudo-elements */
+@keyframes subtlePan {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.landing-container::before {
+    /* background-image: url(...); uncomment and set your image */
+    /* animation: subtlePan 120s linear infinite alternate; */ /* Slow pan for first layer */
+    /* Example: Abstract network or subtle light streaks */
+    background: radial-gradient(circle at 20% 20%, rgba(0, 123, 255, 0.15), transparent 70%),
+                radial-gradient(circle at 80% 70%, rgba(0, 200, 255, 0.1), transparent 70%);
+    opacity: 0.6;
+}
+
+.landing-container::after {
+    /* background-image: url(...); uncomment and set your image */
+    /* animation: subtlePan 180s linear infinite alternate-reverse; */ /* Different pan for second layer */
+    /* Example: Another layer of patterns or data-like visuals */
+    background: linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.02) 75%, transparent 75%, transparent);
+    background-size: 60px 60px;
+    opacity: 0.1;
+    mix-blend-mode: overlay; /* Experiment with blend modes */
+}
+
+.landing-container header {
+    position: relative; /* Ensure header content is above pseudo-elements */
+    z-index: 2;
+    border-bottom: none; /* Remove border for a more integrated look */
+    margin-bottom: 20px; /* Adjusted margin */
+}
+
+.landing-container header h1 {
+    font-size: 3.8em; /* Slightly larger for more impact */
+    margin-top: 0; /* Remove potential default margin */
+    margin-bottom: 30px; /* Consistent spacing */
+    font-weight: 700; /* Bolder */
+    color: #ffffff; /* Pure white for max contrast on dark bg */
+    text-shadow: 0px 2px 10px rgba(0, 0, 0, 0.5); /* More pronounced shadow for depth */
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0; /* Initially hidden for animation */
+}
+
+/* Ensure main content (button, showcase) is above pseudo-elements */
+.landing-container main {
+    position: relative;
+    z-index: 2;
+    width:100%; /* Allow main to take width for its content */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center children like CTA and showcase */
+}
+
+.cta-button {
+    background-color: #00A9E0; /* A vibrant AI-like blue/cyan */
+    color: #ffffff;
+    padding: 18px 40px; /* Larger button */
+    font-size: 1.3em;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px; 
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 169, 224, 0.3);
+    animation: fadeInScaleUp 0.8s ease-out 0.4s forwards; /* Delay after title */
+    opacity: 0; /* Initially hidden for animation */
+}
+
+.cta-button:hover, .cta-button:focus {
+    background-color: #008FBF; /* Darker shade on hover */
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 169, 224, 0.4);
+    /* animation: subtlePulse 1.5s infinite ease-in-out; */ /* Optional: pulse on hover */
+}
+
+.landing-container footer {
+    position: relative; /* Ensure footer content is above pseudo-elements */
+    z-index: 2;
+    margin-top: 100px; /* More space before footer */
+    padding-top: 20px;
+    font-size: 0.9em;
+    color: #a0a0c0; /* Lighter grey for footer text on dark bg */
+    border-top: 1px solid rgba(255,255,255,0.1); /* Subtle top border */
+}
+
+/* Visual Showcase Section on Landing Page */
+.visual-showcase {
+    margin-top: 100px; /* Increased space from CTA */
+    width: 100%;
+    max-width: 1100px; /* Slightly adjusted max-width for balance */
+    padding: 0 20px; 
+    box-sizing: border-box;
+    position: relative; /* For z-index stacking context if needed, though main covers it */
+    z-index: 2;
+}
+
+.visual-showcase h2 {
+    font-size: 2.8em; /* Larger showcase title */
+    color: #ffffff; /* White text */
+    text-align: center;
+    margin-bottom: 60px;
+    font-weight: 600;
+    text-shadow: 0px 1px 5px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 0.8s ease-out 0.8s forwards; /* Delay after CTA */
+    opacity: 0; /* Initially hidden */
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Slightly larger min card width */
+    gap: 40px; /* Increased gap */ 
+}
+
+.feature-card {
+    background-color: rgba(40, 40, 70, 0.7); /* Semi-transparent dark card background */
+    backdrop-filter: blur(10px); /* Frosted glass effect for modern AI feel */
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 15px; 
+    padding: 35px 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); 
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border for definition */
+    color: #e0e0e0; /* Light text for cards */
+    opacity: 0; /* Initially hidden for animation */
+    transform: translateY(20px); /* Start slightly lower for slide-up effect */
+}
+
+/* Staggered animation for feature cards */
+.feature-card:nth-child(1) {
+    animation: fadeInUp 0.7s ease-out 1.2s forwards;
+}
+.feature-card:nth-child(2) {
+    animation: fadeInUp 0.7s ease-out 1.4s forwards;
+}
+.feature-card:nth-child(3) {
+    animation: fadeInUp 0.7s ease-out 1.6s forwards;
+}
+/* Add more if you have more cards */
+
+.feature-card:hover {
+    transform: translateY(-10px) scale(1.03); 
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.feature-icon {
+    font-size: 3.5em; 
+    margin-bottom: 25px;
+    color: #00A9E0; /* Vibrant AI blue for icons */
+    line-height: 1;
+    text-shadow: 0 0 15px rgba(0, 169, 224, 0.5);
+}
+
+.feature-card h3 {
+    font-size: 1.5em;
+    color: #ffffff; /* White heading for cards */
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.feature-card p {
+    font-size: 1em;
+    color: #c0c0e0; /* Lighter paragraph text */
+    line-height: 1.7;
+}
+
+/* General Container for Note Page - NOW DARK THEMED */
+.container { /* This is for the Note Generation Page */
+    width: 85%; 
+    max-width: 960px; 
+    margin: 40px auto; 
+    background-color: #1f1f38; /* Dark background similar to landing but distinct */
+    padding: 30px 45px; 
+    border-radius: 15px; /* Match card radius */ 
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3); 
+    color: #e0e0e0; /* Default light text color for the container */
+}
+
+.container header { /* Header within the note page */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border for dark theme */
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.container header h1 { /* Note Page Title */
+    color: #ffffff; 
+    font-size: 2.2em; 
+    margin: 0;
+    font-weight: 600;
+}
+
+.container .back-button {
+    text-decoration: none;
+    color: #00A9E0; /* Use the AI-theme accent blue */
+    font-size: 1em;
+    font-weight: 500;
+}
+.container .back-button:hover {
+    color: #87cefa; /* Lighter blue for hover */
+    text-decoration: underline;
+}
+
+/* Input Groups on Note Page */
+.container .input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500; 
+    color: #c0c0e0; /* Lighter label color */
+}
+
+.container .input-group input[type="text"],
+.container textarea {
+    width: 100%;
+    padding: 12px 15px; 
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border for dark inputs */
+    border-radius: 8px; /* Consistent border radius */
+    box-sizing: border-box;
+    font-size: 1em;
+    background-color: #2a2a4a; /* Darker input background */
+    color: #e0e0e0; /* Light text in inputs */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.container .input-group input[type="text"]:focus,
+.container textarea:focus {
+    border-color: #00A9E0; /* AI-theme accent blue for focus */
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 169, 224, 0.25); /* Subtle glow */
+    background-color: #303050; /* Slightly lighter on focus */
+}
+
+/* Buttons on Note Page */
+.container button:not(.cta-button) { 
+    background-color: #00A9E0; /* AI-theme accent blue */
+    color: white;
+    padding: 10px 20px; 
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600; /* Bolder button text */
+    margin-right: 10px;
+    margin-bottom: 10px; 
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.container button:not(.cta-button):hover:not(:disabled) {
+    background-color: #008FBF; /* Darker shade on hover */
+    transform: translateY(-1px);
+}
+
+.container button:disabled { /* Ensure this is specific enough if .cta-button has different disabled */
+    background-color: #4a4a6a; /* Muted dark background for disabled */
+    color: #888;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Text Areas for Transcription and Refurbished Notes on Note Page */
+.container .transcribed-text-area,
+.container .refurbished-text-area {
+    width: 100%;
+    min-height: 180px; 
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background-color: rgba(30, 30, 50, 0.8); /* Slightly transparent dark area */
+    backdrop-filter: blur(5px); /* Subtle blur for the text areas */
+    -webkit-backdrop-filter: blur(5px);
+    margin-top: 10px;
+    margin-bottom: 25px;
+    white-space: pre-wrap; 
+    font-family: 'Menlo', 'Monaco', 'Courier New', Courier, monospace; 
+    font-size: 0.95em;
+    line-height: 1.6;
+    overflow-y: auto;
+    color: #e0e0e0; /* Light text */
+}
+
+.container .transcribed-text-area[contenteditable="true"]:focus {
+    border-color: #00A9E0;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 169, 224, 0.25);
+    background-color: rgba(40, 40, 60, 0.9);
+}
+
+/* Section Headings on Note Page */
+.container .transcription-section h2,
+.container .template-section label, 
+.container .refurbished-section h2 {
+    font-size: 1.6em; /* Slightly larger section titles */ 
+    color: #ffffff; /* White, prominent titles */
+    margin-top: 30px;
+    margin-bottom: 15px; /* More space after title */
+    font-weight: 600;
+}
+
+.container .template-section label { /* Specific styling for template label if needed */
+    font-size: 1.3em; /* Adjusted to be more like a heading */ 
+    font-weight: 600; 
+    color: #e0e0e0; /* Lighter label color */
+}
+
+.container footer { /* Footer on the Note Page */
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9em;
+    color: #a0a0c0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: 25px 20px;
+    }
+
+    .landing-container header h1 {
+        font-size: 2.8em; /* Adjusted for better mobile fit with animation */
+    }
+    
+    header h1 {
+        font-size: 1.9em;
+    }
+
+    button {
+        padding: 10px 15px;
+        font-size: 0.95em;
+        width: 100%; /* Make buttons full width on mobile */
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    .cta-button {
+        padding: 15px 30px;
+        font-size: 1.2em;
+        width: auto; /* CTA button can remain auto width */
+    }
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .back-button {
+        margin-bottom: 10px;
+    }
+    .visual-showcase h2 {
+        font-size: 2.2em;
+    }
+} 
