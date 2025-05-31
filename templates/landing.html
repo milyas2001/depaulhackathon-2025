@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental Note Transcriber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="landing-container">
+        <header>
+            <h1>Every Dentist's Top Choice for Note Generation.</h1>
+        </header>
+        <main>
+            <button id="startNoteTakingButton" class="cta-button">Start Note-Taking</button>
+
+            <section class="visual-showcase">
+                <h2>Experience the Difference</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">&#128172;</div> <!-- Speech bubble icon -->
+                        <h3>Real-time Transcription</h3>
+                        <p>Instantly convert your voice notes to text with high accuracy as you speak.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">&#128196;</div> <!-- Document icon -->
+                        <h3>Smart Refinement</h3>
+                        <p>Utilize templates to automatically format and structure your notes professionally.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">&#128273;</div> <!-- Key icon -->
+                        <h3>Patient ID Integration</h3>
+                        <p>Easily associate notes with specific Patient IDs for organized record-keeping.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        <footer>
+            <p>&copy; 2024 Dental Note Pro. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+</body>
+</html> 

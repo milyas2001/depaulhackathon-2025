@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    />
+    <title>ChairsideAI - AI-Powered Clinical Documentation</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
+    <style>
+      .nav-container {
+        background: rgba(23, 23, 23, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 50;
+      }
+
+      .hero-section {
+        position: relative;
+        min-height: 100vh;
+        background: linear-gradient(to right, #141414 40%, rgba(0, 122, 255, 0.05) 100%);
+        overflow: hidden;
+      }
+
+      .feature-badge {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .feature-badge:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .feature-badge .icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 122, 255, 0.2);
+        border-radius: 6px;
+        color: #007AFF;
+      }
+
+      .primary-button {
+        position: relative;
+        background: linear-gradient(135deg, #007AFF 0%, #00C6FF 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 122, 255, 0.1);
+        z-index: 100;
+      }
+
+      .primary-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px rgba(0, 122, 255, 0.2);
+      }
+
+      .primary-button:active {
+        transform: translateY(0);
+      }
+
+      .secondary-button {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .secondary-button:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .animation-container {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 60%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .gradient-text {
+        background: linear-gradient(135deg, #007AFF 0%, #00C6FF 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.2;
+      }
+
+      .typing-dots::after {
+        content: '';
+        animation: typing 1s infinite;
+      }
+
+      @keyframes typing {
+        0%, 20% { content: '.'; }
+        40% { content: '..'; }
+        60% { content: '...'; }
+        80%, 100% { content: ''; }
+      }
+
+      .scene-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      .scene-element {
+        position: absolute;
+        transition: all 0.3s ease;
+      }
+
+      .scene-element:hover {
+        transform: scale(1.05);
+      }
+
+      .floating {
+        animation: floating 3s ease-in-out infinite;
+      }
+
+      @keyframes floating {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+
+      .glow {
+        animation: glow 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes glow {
+        from { filter: drop-shadow(0 0 2px rgba(0, 122, 255, 0.5)); }
+        to { filter: drop-shadow(0 0 10px rgba(0, 122, 255, 0.8)); }
+      }
+
+      .feature-box {
+        position: relative;
+      }
+      
+      .feature-box::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 16px;
+        padding: 2px;
+        background: linear-gradient(45deg, rgba(0, 122, 255, 0.5), rgba(0, 198, 255, 0.5));
+        -webkit-mask: 
+          linear-gradient(#fff 0 0) content-box, 
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      .feature-box:hover::after {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body class="bg-[#141414]">
+    <!-- Navigation -->
+    <nav class="nav-container fixed top-0 left-0 right-0 z-50">
+      <div class="max-w-7xl mx-auto px-8 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <svg class="w-8 h-8 text-[#007AFF]" viewBox="0 0 32 32" fill="none">
+              <path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12S22.627 4 16 4zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S6 21.523 6 16 10.477 6 16 6z" fill="currentColor"/>
+            </svg>
+            <span class="text-white text-xl font-bold">ChairsideAI</span>
+          </div>
+          
+          <div class="flex items-center gap-8">
+            <a href="/" class="text-white/80 hover:text-white transition-colors">Home</a>
+            <a href="/dashboard" class="text-white/80 hover:text-white transition-colors">Dashboard</a>
+            <a href="/patients" class="text-white/80 hover:text-white transition-colors">Patients</a>
+            <a href="/notes" class="text-white/80 hover:text-white transition-colors">Notes</a>
+            <a href="/settings" class="text-white/80 hover:text-white transition-colors">Settings</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="relative max-w-7xl mx-auto px-8 py-32">
+        <div class="max-w-xl">
+          <h1 class="gradient-text text-6xl font-bold mb-6">
+            <span id="typed-text"></span>
+          </h1>
+          
+          <p class="text-white/70 text-xl mb-8">
+            Experience the future of dental documentation with real-time voice-to-text transcription and intelligent organization.
+          </p>
+
+          <div class="grid grid-cols-2 gap-4 mt-8">
+            <div class="feature-box group">
+              <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl hover:shadow-blue-500/20">
+                <div class="absolute top-0 left-0 h-full w-full">
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                </div>
+                <div class="relative z-10">
+                  <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                    <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </div>
+                  <h3 class="mb-2 text-xl font-semibold text-white">Voice Recognition</h3>
+                  <p class="text-sm text-gray-400">Effortlessly capture patient notes through advanced voice-to-text technology</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature-box group">
+              <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl hover:shadow-blue-500/20">
+                <div class="absolute top-0 left-0 h-full w-full">
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                </div>
+                <div class="relative z-10">
+                  <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                    <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 class="mb-2 text-xl font-semibold text-white">Smart Templates</h3>
+                  <p class="text-sm text-gray-400">Professionally formatted templates designed specifically for dental procedures</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature-box group">
+              <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl hover:shadow-blue-500/20">
+                <div class="absolute top-0 left-0 h-full w-full">
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                </div>
+                <div class="relative z-10">
+                  <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                    <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 class="mb-2 text-xl font-semibold text-white">AI-Powered</h3>
+                  <p class="text-sm text-gray-400">Intelligent assistance for accurate diagnosis and treatment recommendations</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature-box group">
+              <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl hover:shadow-blue-500/20">
+                <div class="absolute top-0 left-0 h-full w-full">
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                </div>
+                <div class="relative z-10">
+                  <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                    <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 class="mb-2 text-xl font-semibold text-white">Real-time Notes</h3>
+                  <p class="text-sm text-gray-400">Instant documentation and updates during patient consultations</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-6 mt-12">
+            <div class="space-y-4">
+              <h3 class="gradient-text text-4xl font-bold leading-tight">Are you a dentist?</h3>
+              <div class="flex gap-4 items-end">
+                <div class="flex-1">
+                  <input 
+                    type="text" 
+                    id="dentist-name" 
+                    placeholder="Type your name to get started..." 
+                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-[#007AFF] transition-all"
+                  >
+                  <p id="name-error" class="hidden text-red-500 text-sm mt-2">Please enter your name to continue</p>
+                </div>
+                <button 
+                  onclick="tryNow()" 
+                  class="primary-button flex items-center gap-2 min-w-[120px] justify-center cursor-pointer hover:opacity-90 active:transform active:scale-95"
+                  style="z-index: 10;"
+                >
+                  <span>Try Now</span>
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-white/60 text-sm">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Your information is secure and will only be used for identification</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="animation-container">
+        <div class="scene-container">
+          <!-- Main dental surgeon animation -->
+          <lottie-player
+            src="https://assets2.lottiefiles.com/packages/lf20_5tl1xxnz.json"
+            background="transparent"
+            speed="1"
+            class="scene-element"
+            style="width: 100%; height: 80%;"
+            loop
+            autoplay
+          ></lottie-player>
+
+          <!-- Floating dental tools -->
+          <lottie-player
+            src="https://assets9.lottiefiles.com/packages/lf20_xnbikipz.json"
+            background="transparent"
+            speed="1"
+            class="scene-element floating"
+            style="width: 30%; top: 10%; right: 10%;"
+            loop
+            autoplay
+          ></lottie-player>
+
+          <!-- AI processing visualization -->
+          <lottie-player
+            src="https://assets8.lottiefiles.com/packages/lf20_p1qiuawe.json"
+            background="transparent"
+            speed="1"
+            class="scene-element glow"
+            style="width: 25%; bottom: 15%; right: 5%;"
+            loop
+            autoplay
+          ></lottie-player>
+
+          <!-- Transcription overlay -->
+          <div class="absolute bottom-10 right-10 bg-black/80 backdrop-blur-sm rounded-lg p-4 text-white/90 font-mono text-sm w-64">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+              <span>Transcribing</span>
+              <span class="typing-dots"></span>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="text-blue-400">"Patient presents with mild sensitivity on tooth #18..."</div>
+              <div class="text-emerald-400">"Conducting examination of the affected area..."</div>
+              <div class="text-blue-400">"Recommending treatment plan..."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      // Initialize Typed.js
+      document.addEventListener('DOMContentLoaded', () => {
+        const typed = new Typed('#typed-text', {
+          strings: ['Transform Your Dental Practice^500\nwith AI-Powered Note Generation.'],
+          typeSpeed: 50,
+          backSpeed: 30,
+          startDelay: 1000,
+          showCursor: true,
+          cursorChar: '|',
+          loop: true,
+          loopCount: Infinity,
+          backDelay: 3000,
+        });
+
+        // Add mouse parallax effect to scene elements
+        document.addEventListener('mousemove', (e) => {
+          const mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+          const mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+          
+          document.querySelectorAll('.scene-element').forEach((element) => {
+            const speed = element.classList.contains('floating') ? 20 : 10;
+            element.style.transform = `translate(${mouseX * speed}px, ${mouseY * speed}px)`;
+          });
+        });
+
+        // Add click handler for Try Now button
+        document.querySelector('button[onclick="tryNow()"]').addEventListener('click', function(e) {
+          e.preventDefault();
+          tryNow();
+        });
+
+        // Add enter key support for the input field
+        document.getElementById('dentist-name').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            tryNow();
+          }
+        });
+
+        // Hide error when user starts typing
+        document.getElementById('dentist-name').addEventListener('input', function() {
+          document.getElementById('name-error').classList.add('hidden');
+          this.classList.remove('border-red-500');
+        });
+      });
+
+      // Function to handle Try Now button click
+      function tryNow() {
+        const nameInput = document.getElementById('dentist-name');
+        const errorText = document.getElementById('name-error');
+        
+        if (!nameInput.value.trim()) {
+          errorText.classList.remove('hidden');
+          nameInput.classList.add('border-red-500');
+          return;
+        }
+
+        const dentistName = nameInput.value.trim();
+        
+        // Store name in session storage
+        sessionStorage.setItem('dentistName', dentistName);
+        
+        // Redirect to dashboard with the name parameter
+        window.location.href = `/dashboard?name=${encodeURIComponent(dentistName)}`;
+      }
+    </script>
+  </body>
+</html> 
