@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    />
+
+    <title>Dental Notes - Clinical Record</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <style>
+      .processing-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      .processing-content {
+        background: #303030;
+        padding: 2rem;
+        border-radius: 1rem;
+        text-align: center;
+        max-width: 400px;
+      }
+      .processing-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 1rem auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .processing-steps {
+        text-align: left;
+        margin-top: 1rem;
+      }
+      .processing-step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.5rem 0;
+        color: #ababab;
+      }
+      .processing-step.active {
+        color: white;
+      }
+      .processing-step.completed {
+        color: #4CAF50;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="relative flex size-full min-h-screen flex-col bg-[#141414] dark group/design-root overflow-x-hidden" style='font-family: Manrope, "Noto Sans", sans-serif;'>
+      <!-- Processing Overlay -->
+      <div id="processingOverlay" class="processing-overlay" style="display: none;">
+        <div class="processing-content">
+          <h3 class="text-white text-xl font-bold mb-4">Generating Clinical Record</h3>
+          <div class="processing-spinner"></div>
+          <div class="processing-steps">
+            <div id="step1" class="processing-step">
+              <span class="step-icon">⚪</span>
+              <span>Loading AI model...</span>
+            </div>
+            <div id="step2" class="processing-step">
+              <span class="step-icon">⚪</span>
+              <span>Processing transcription...</span>
+            </div>
+            <div id="step3" class="processing-step">
+              <span class="step-icon">⚪</span>
+              <span>Formatting clinical record...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="layout-container flex h-full grow flex-col">
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#303030] px-10 py-3">
+          <div class="flex items-center gap-4 text-white">
+            <div class="size-4">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z"
+                  fill="currentColor"
+                ></path>
+              </svg>
+            </div>
+            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Dental Notes</h2>
+          </div>
+          <div class="flex flex-1 justify-end gap-8">
+            <div class="flex items-center gap-9">
+              <a class="text-white text-sm font-medium leading-normal" href="/">Dashboard</a>
+              <a class="text-white text-sm font-medium leading-normal" href="/patients">Patients</a>
+              <a class="text-white text-sm font-medium leading-normal" href="#">Appointments</a>
+              <a class="text-white text-sm font-medium leading-normal" href="#">Billing</a>
+            </div>
+            <button
+              class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 bg-[#303030] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"
+            >
+              <div class="text-white" data-icon="Bell" data-size="20px" data-weight="regular">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" fill="currentColor" viewBox="0 0 256 256">
+                  <path
+                    d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z"
+                  ></path>
+                </svg>
+              </div>
+            </button>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC7DGKL8qPa3GNSHw4Pb4-iq4dXaYQkPmW2Sv81-ZAY8AyapCbTJkaB-G6azZDwAXxR5omUz-eWvlnbYIHv7dlnBSWOp_CqZ5vkzJYk_grKx-4ZUV7Iil-ZAKyBBN1kACnegH5AiwbMCAp8vwSDel4YkgwdQCtCKCoIkETCyrrBzQ5w_8c7IRW_-ZCJePIa72sOLYbzgK46cfkwwlzjK3pw4NmRSB10n41wEDgWp3k-eFEUMbYGGVFF-l6wx9_TpQGmmx-J04CiCjc");'
+            ></div>
+          </div>
+        </header>
+        <div class="px-40 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+            <div class="flex flex-wrap gap-2 p-4">
+              <a class="text-[#ababab] text-base font-medium leading-normal" href="/patients">Patients</a>
+              <span class="text-[#ababab] text-base font-medium leading-normal">/</span>
+              <span class="text-white text-base font-medium leading-normal">{{ patient.name }}</span>
+            </div>
+            <div class="flex flex-wrap justify-between gap-3 p-4">
+              <div class="flex min-w-72 flex-col gap-3">
+                <p class="text-white tracking-light text-[32px] font-bold leading-tight">Clinical Record</p>
+                <p class="text-[#ababab] text-sm font-normal leading-normal">Review and edit the AI-generated clinical record before saving.</p>
+              </div>
+            </div>
+            <div class="flex max-w-full flex-1 items-stretch gap-4 px-4 py-3">
+              <label class="flex flex-col flex-1">
+                <textarea
+                  id="clinicalRecordText"
+                  style="height: 600px !important; min-height: 600px !important;"
+                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-y-auto rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#303030] focus:border-none h-[600px] placeholder:text-[#ababab] p-4 text-base font-normal leading-normal"
+                  readonly
+                >{{ clinical_record }}</textarea>
+              </label>
+            </div>
+            <div class="flex px-4 py-3 justify-end gap-3">
+              <button
+                id="editRecord"
+                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#303030] text-white text-sm font-bold leading-normal tracking-[0.015em]"
+              >
+                <span class="truncate">Edit</span>
+              </button>
+              <button
+                id="saveRecord"
+                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-black text-white text-sm font-bold leading-normal tracking-[0.015em]"
+              >
+                <span class="truncate">Save</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Show processing overlay and update steps
+      document.addEventListener('DOMContentLoaded', () => {
+        const overlay = document.getElementById('processingOverlay');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        
+        // If we already have clinical record content, hide the overlay
+        const clinicalRecordText = document.getElementById('clinicalRecordText');
+        if (clinicalRecordText && clinicalRecordText.value.trim()) {
+          overlay.style.display = 'none';
+          return;
+        }
+
+        // Show the processing overlay
+        overlay.style.display = 'flex';
+        
+        // Simulate progress (you can make this real by using server-sent events)
+        setTimeout(() => {
+          step1.classList.add('active');
+          step1.querySelector('.step-icon').textContent = '🔄';
+          
+          setTimeout(() => {
+            step1.classList.remove('active');
+            step1.classList.add('completed');
+            step1.querySelector('.step-icon').textContent = '✅';
+            step2.classList.add('active');
+            step2.querySelector('.step-icon').textContent = '🔄';
+            
+            setTimeout(() => {
+              step2.classList.remove('active');
+              step2.classList.add('completed');
+              step2.querySelector('.step-icon').textContent = '✅';
+              step3.classList.add('active');
+              step3.querySelector('.step-icon').textContent = '🔄';
+              
+              setTimeout(() => {
+                step3.classList.remove('active');
+                step3.classList.add('completed');
+                step3.querySelector('.step-icon').textContent = '✅';
+                
+                // Hide overlay after completion
+                setTimeout(() => {
+                  overlay.style.display = 'none';
+                }, 500);
+              }, 1000);
+            }, 1000);
+          }, 1000);
+        }, 100);
+      });
+    </script>
+  </body>
+</html>
