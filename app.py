@@ -271,7 +271,20 @@ def get_patient_notes(patient_id):
 @app.route('/')
 def index():
     init_session()
-    return render_template('dashboard.html', recent_patients=session.get('recent_patients', []))
+    return render_template('home.html')
+
+@app.route('/dashboard')
+def dashboard():
+    init_session()
+    
+    # Get dentist name from query parameter if available
+    dentist_name = request.args.get('name')
+    if dentist_name:
+        session['dentist_name'] = dentist_name
+    
+    return render_template('dashboard.html', 
+                         recent_patients=session.get('recent_patients', []),
+                         dentist_name=session.get('dentist_name', 'Doctor'))
 
 @app.route('/start-recording', methods=['POST', 'GET'])
 def start_recording():
