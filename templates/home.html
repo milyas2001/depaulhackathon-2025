@@ -8,7 +8,7 @@
       onload="this.rel='stylesheet'"
       href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
     />
-    <title>Dental Notes - AI-Powered Clinical Documentation</title>
+    <title>ChairsideAI - AI-Powered Clinical Documentation</title>
     <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -18,6 +18,7 @@
         background: rgba(23, 23, 23, 0.8);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 50;
       }
 
       .hero-section {
@@ -58,6 +59,7 @@
       }
 
       .primary-button {
+        position: relative;
         background: linear-gradient(135deg, #007AFF 0%, #00C6FF 100%);
         color: white;
         padding: 1rem 2rem;
@@ -66,11 +68,16 @@
         transition: all 0.3s ease;
         border: none;
         box-shadow: 0 4px 6px rgba(0, 122, 255, 0.1);
+        z-index: 100;
       }
 
       .primary-button:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 12px rgba(0, 122, 255, 0.2);
+      }
+
+      .primary-button:active {
+        transform: translateY(0);
       }
 
       .secondary-button {
@@ -105,6 +112,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        pointer-events: none;
       }
 
       .gradient-text {
@@ -195,7 +203,7 @@
             <svg class="w-8 h-8 text-[#007AFF]" viewBox="0 0 32 32" fill="none">
               <path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12S22.627 4 16 4zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S6 21.523 6 16 10.477 6 16 6z" fill="currentColor"/>
             </svg>
-            <span class="text-white text-xl font-bold">Dental Notes</span>
+            <span class="text-white text-xl font-bold">ChairsideAI</span>
           </div>
           
           <div class="flex items-center gap-8">
@@ -306,7 +314,8 @@
                 </div>
                 <button 
                   onclick="tryNow()" 
-                  class="primary-button flex items-center gap-2 min-w-[120px] justify-center"
+                  class="primary-button flex items-center gap-2 min-w-[120px] justify-center cursor-pointer hover:opacity-90 active:transform active:scale-95"
+                  style="z-index: 10;"
                 >
                   <span>Try Now</span>
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,30 +389,52 @@
 
     <script>
       // Initialize Typed.js
-      const typed = new Typed('#typed-text', {
-        strings: ['Transform Your Dental Practice^500\nwith AI-Powered Note Generation.'],
-        typeSpeed: 50,
-        backSpeed: 30,
-        startDelay: 1000,
-        showCursor: true,
-        cursorChar: '|',
-        loop: true,
-        loopCount: Infinity,
-        backDelay: 3000,
-      });
+      document.addEventListener('DOMContentLoaded', () => {
+        const typed = new Typed('#typed-text', {
+          strings: ['Transform Your Dental Practice^500\nwith AI-Powered Note Generation.'],
+          typeSpeed: 50,
+          backSpeed: 30,
+          startDelay: 1000,
+          showCursor: true,
+          cursorChar: '|',
+          loop: true,
+          loopCount: Infinity,
+          backDelay: 3000,
+        });
 
-      // Add mouse parallax effect to scene elements
-      document.addEventListener('mousemove', (e) => {
-        const mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-        const mouseY = (e.clientY / window.innerHeight) * 2 - 1;
-        
-        document.querySelectorAll('.scene-element').forEach((element) => {
-          const speed = element.classList.contains('floating') ? 20 : 10;
-          element.style.transform = `translate(${mouseX * speed}px, ${mouseY * speed}px)`;
+        // Add mouse parallax effect to scene elements
+        document.addEventListener('mousemove', (e) => {
+          const mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+          const mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+          
+          document.querySelectorAll('.scene-element').forEach((element) => {
+            const speed = element.classList.contains('floating') ? 20 : 10;
+            element.style.transform = `translate(${mouseX * speed}px, ${mouseY * speed}px)`;
+          });
+        });
+
+        // Add click handler for Try Now button
+        document.querySelector('button[onclick="tryNow()"]').addEventListener('click', function(e) {
+          e.preventDefault();
+          tryNow();
+        });
+
+        // Add enter key support for the input field
+        document.getElementById('dentist-name').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            tryNow();
+          }
+        });
+
+        // Hide error when user starts typing
+        document.getElementById('dentist-name').addEventListener('input', function() {
+          document.getElementById('name-error').classList.add('hidden');
+          this.classList.remove('border-red-500');
         });
       });
 
-      // New function to handle Try Now button click
+      // Function to handle Try Now button click
       function tryNow() {
         const nameInput = document.getElementById('dentist-name');
         const errorText = document.getElementById('name-error');
@@ -414,25 +445,14 @@
           return;
         }
 
-        // Store name in session storage
-        sessionStorage.setItem('dentistName', nameInput.value.trim());
+        const dentistName = nameInput.value.trim();
         
-        // Redirect to dashboard
-        window.location.href = '/dashboard';
+        // Store name in session storage
+        sessionStorage.setItem('dentistName', dentistName);
+        
+        // Redirect to dashboard with the name parameter
+        window.location.href = `/dashboard?name=${encodeURIComponent(dentistName)}`;
       }
-
-      // Add enter key support for the input field
-      document.getElementById('dentist-name').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          tryNow();
-        }
-      });
-
-      // Hide error when user starts typing
-      document.getElementById('dentist-name').addEventListener('input', function() {
-        document.getElementById('name-error').classList.add('hidden');
-        this.classList.remove('border-red-500');
-      });
     </script>
   </body>
 </html> 

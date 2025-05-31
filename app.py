@@ -202,10 +202,17 @@ Patient: {patient_name}
 
 # Initialize session data structure
 def init_session():
+    """Initialize session variables if they don't exist"""
     if 'patients' not in session:
         session['patients'] = {}
     if 'recent_patients' not in session:
         session['recent_patients'] = []
+    if 'current_patient' not in session:
+        session['current_patient'] = None
+    if 'current_note_data' not in session:
+        session['current_note_data'] = None
+    if 'dentist_name' not in session:
+        session['dentist_name'] = 'Doctor'
 
 # Create data directory if it doesn't exist
 DATA_DIR = Path('data')
@@ -526,10 +533,12 @@ def view_note(note_id):
                     patient_id = patient_dir.name
                     patient_file = PATIENTS_DIR / f"{patient_id}.json"
                     
+                    patient = None
                     if patient_file.exists():
                         with open(patient_file, 'r') as f:
                             patient = json.load(f)
-                    else:
+                    
+                    if patient is None:
                         # Fallback patient info if file doesn't exist
                         patient = {
                             'id': patient_id,
@@ -692,14 +701,14 @@ def generate_clinical_record():
             session['current_note_data'] = current_note_data
             session.modified = True
             logger.info("Clinical record saved to session")
+            
+            logger.info("=== Completed clinical record generation ===")
+            return render_template('clinicalrecord.html', 
+                                patient=current_patient,
+                                clinical_record=clinical_record)
         else:
             logger.error("Failed to generate clinical note")
             return redirect(url_for('transcription'))
-        
-        logger.info("=== Completed clinical record generation ===")
-        return render_template('clinicalrecord.html', 
-                            patient=current_patient,
-                            clinical_record=clinical_record)
         
     except Exception as e:
         logger.error(f"Error in generate_clinical_record: {str(e)}")
