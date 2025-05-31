@@ -241,16 +241,32 @@ def save_note_to_file(note, patient_id):
 
 def get_patient_notes(patient_id):
     """Retrieve all notes for a patient."""
-    patient_dir = NOTES_DIR / patient_id
-    notes = []
-    
-    if patient_dir.exists():
-        for note_file in patient_dir.glob('*.json'):
-            with open(note_file, 'r') as f:
-                note = json.load(f)
-                notes.append(note)
-    
-    return sorted(notes, key=lambda x: x['timestamp'], reverse=True)
+    try:
+        logger.info(f"Retrieving notes for patient {patient_id}")
+        patient_dir = NOTES_DIR / patient_id
+        notes = []
+        
+        if patient_dir.exists():
+            logger.info(f"Found patient directory: {patient_dir}")
+            for note_file in patient_dir.glob('*.json'):
+                try:
+                    logger.info(f"Reading note file: {note_file}")
+                    with open(note_file, 'r') as f:
+                        note = json.load(f)
+                        notes.append(note)
+                except Exception as e:
+                    logger.error(f"Error reading note file {note_file}: {str(e)}")
+                    continue
+        else:
+            logger.warning(f"No directory found for patient {patient_id}")
+        
+        sorted_notes = sorted(notes, key=lambda x: x['timestamp'], reverse=True)
+        logger.info(f"Retrieved {len(sorted_notes)} notes for patient {patient_id}")
+        return sorted_notes
+    except Exception as e:
+        logger.error(f"Error in get_patient_notes for patient {patient_id}: {str(e)}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return []
 
 @app.route('/')
 def index():
@@ -478,14 +494,55 @@ def patient_notes(patient_id):
 
 @app.route('/view-note/<note_id>')
 def view_note(note_id):
-    patients = session.get('patients', {})
-    for patient in patients.values():
-        for note in patient.get('notes', []):
-            if note['id'] == note_id:
-                session['current_patient'] = patient
-                session['current_note'] = note
-                return redirect(url_for('clinical_record'))
-    return redirect(url_for('patients'))
+    try:
+        logger.info(f"Viewing note with ID: {note_id}")
+        
+        # First try to find which patient this note belongs to
+        for patient_dir in NOTES_DIR.iterdir():
+            if not patient_dir.is_dir():
+                continue
+                
+            note_file = patient_dir / f"{note_id}.json"
+            if note_file.exists():
+                try:
+                    # Found the note file, read it
+                    with open(note_file, 'r') as f:
+                        note = json.load(f)
+                        
+                    # Get patient info
+                    patient_id = patient_dir.name
+                    patient_file = PATIENTS_DIR / f"{patient_id}.json"
+                    
+                    if patient_file.exists():
+                        with open(patient_file, 'r') as f:
+                            patient = json.load(f)
+                    else:
+                        # Fallback patient info if file doesn't exist
+                        patient = {
+                            'id': patient_id,
+                            'name': note.get('patient_name', 'Unknown Patient')
+                        }
+                    
+                    # Store in session for the clinical record view
+                    session['current_patient'] = patient
+                    session['current_note_data'] = {
+                        'transcription': note.get('transcription', ''),
+                        'clinical_record': note.get('content', '')
+                    }
+                    
+                    return render_template('clinicalrecord.html',
+                                        patient=patient,
+                                        clinical_record=note.get('content', ''))
+                except Exception as e:
+                    logger.error(f"Error reading note file {note_file}: {str(e)}")
+                    
+        logger.error(f"Note with ID {note_id} not found")
+        return redirect(url_for('patients'))
+        
+    except Exception as e:
+        logger.error(f"Error in view_note: {str(e)}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return redirect(url_for('patients'))
 
 @app.route('/get-current-patient')
 def get_current_patient():

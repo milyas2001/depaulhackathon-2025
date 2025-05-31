@@ -70,7 +70,7 @@
                 {% for note in patient.notes|sort(attribute='timestamp', reverse=true) %}
                   <div class="flex flex-col bg-[#303030] rounded-xl p-4">
                     <div class="flex justify-between items-center mb-2">
-                      <span class="text-[#ababab] text-sm">{{ note.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                      <span class="text-[#ababab] text-sm">{{ note.timestamp }}</span>
                       <button
                         onclick="window.location.href='/view-note/{{ note.id }}'"
                         class="flex items-center justify-center rounded-full h-8 px-3 bg-black text-white text-sm font-bold"

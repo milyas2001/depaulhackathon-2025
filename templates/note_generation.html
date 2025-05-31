@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Generation - Dental Transcriber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="{{url_for('landing_page')}}" class="back-button">&larr; Home</a>
+            <h1>Note Generation</h1>
+        </header>
+        <main>
+            <div class="input-group">
+                <label for="patientId">Patient ID:</label>
+                <input type="text" id="patientId" name="patientId" placeholder="Enter Patient ID">
+            </div>
+
+            <button id="startGenerationButton">Start Note Generation</button>
+            <button id="stopGenerationButton" disabled>Stop Note Generation</button>
+            
+            <div class="transcription-section">
+                <h2>Live Transcription:</h2>
+                <div id="transcribedTextOutput" class="transcribed-text-area" contenteditable="true">Speak to see your notes here...</div>
+            </div>
+
+            <div class="template-section">
+                <label for="templateInput">Template:</label>
+                <textarea id="templateInput" name="templateInput" rows="8" placeholder="Enter your sample note template here (e.g., SOAP note structure)..."></textarea>
+            </div>
+
+            <button id="generateRefurbishedButton">Generate Refurbished Notes</button>
+
+            <div class="refurbished-section">
+                <h2>Refurbished Notes:</h2>
+                <pre id="refurbishedNoteOutput" class="refurbished-text-area">Your refurbished notes will appear here.</pre>
+            </div>
+        </main>
+        <footer>
+            <p>&copy; 2024 Dental Note Pro</p>
+        </footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/note_taking.js') }}"></script>
+</body>
+</html> 
