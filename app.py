@@ -132,72 +132,99 @@ def preprocess_transcription(transcription):
     return {k: sorted(v) if isinstance(v, set) else v for k, v in info.items()}
 
 def generate_clinical_note(transcription, patient_name):
-    """Generate a clinical note using structured information."""
+    """Generate a clinical note using DeepSeek AI model."""
     try:
-        # Process the transcription
-        info = preprocess_transcription(transcription)
-        
-        # Build the note components
-        tooth_desc = f"tooth #{info['tooth_number']}" if info['tooth_number'] else "the affected tooth"
-        
-        # Symptoms description
-        symptoms = ', '.join(info['symptoms']) if info['symptoms'] else "dental concerns"
-        
-        # Clinical findings
-        findings = ', '.join(info['findings']) if info['findings'] else "clinical findings warranting treatment"
-        
-        # Treatment description
-        procedures = info['procedures']
-        treatment_plan = info['treatment_plan']
-        
-        # Construct the clinical note with proper medical terminology and flow
-        note_parts = []
-        
-        # Chief complaint and presentation
-        note_parts.append(f"Patient presented with {symptoms} affecting {tooth_desc}.")
-        
-        # Clinical examination
-        if info['findings']:
-            note_parts.append(f"Clinical examination revealed {findings}.")
-        
-        # Treatment performed/planned
-        if procedures:
-            note_parts.append(f"Treatment performed included {', '.join(procedures)}.")
-        if treatment_plan:
-            note_parts.append(f"The recommended treatment plan comprises {', '.join(treatment_plan)}.")
+        if not load_model_if_needed():
+            logger.warning("DeepSeek model not available, falling back to template...")
+            return generate_basic_note(transcription, patient_name)
+
+        # Create a detailed prompt for the AI model
+        prompt = f"""You are an expert dental professional tasked with converting informal dental notes into a formal clinical record.
+
+Input Transcription:
+{transcription}
+
+Task: Generate a detailed, professional clinical note following these guidelines:
+1. Use proper dental terminology
+2. Structure the note with these sections:
+   - Chief Complaint/Presentation
+   - Clinical Examination
+   - Diagnosis
+   - Treatment Performed/Plan
+   - Post-operative Instructions
+3. Extract and include:
+   - Tooth numbers (format as '#X' where X is the number)
+   - Symptoms and their severity
+   - Clinical findings
+   - Procedures performed
+   - Treatment recommendations
+4. Maintain a professional, clinical tone
+5. Include relevant warnings and follow-up instructions
+
+Format the note with proper headers and dates. Return only the formatted clinical note.
+"""
+
+        # Generate the note using DeepSeek
+        logger.info("Generating clinical note with DeepSeek...")
+        try:
+            inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+            outputs = model.generate(
+                inputs.input_ids,
+                max_length=1000,
+                temperature=0.7,
+                top_p=0.95,
+                do_sample=True,
+                pad_token_id=tokenizer.eos_token_id
+            )
+            clinical_note = tokenizer.decode(outputs[0], skip_special_tokens=True)
             
-        # Add clinical protocols and instructions with more specific details
-        note_parts.append("All procedures were performed under local anesthesia following standard clinical protocols.")
-        
-        # Add specific post-operative instructions based on procedures
-        if 'endodontic therapy' in treatment_plan or 'caries removal' in procedures:
-            note_parts.append("Post-operative instructions emphasized temporary crown care, avoiding mastication on the treated tooth, and maintaining meticulous oral hygiene.")
-        else:
-            note_parts.append("Post-operative instructions emphasized maintaining optimal oral hygiene and following the prescribed care regimen.")
-            
-        note_parts.append("Patient was advised to monitor for any persistent pain, swelling, or unusual symptoms and contact the office immediately if concerns arise.")
-        note_parts.append("A follow-up appointment will be scheduled to evaluate healing progress and ensure treatment efficacy.")
-        
-        # Combine into final note
-        note = ' '.join(note_parts)
-        
-        # Add header
-        current_date = datetime.now().strftime("%B %d, %Y")
-        current_time = datetime.now().strftime("%I:%M %p")
-        header = f"""DENTAL CLINICAL NOTE
+            # Extract the actual note from the model's response
+            # (removing any potential prefixes/suffixes from the model)
+            note_start = clinical_note.find("DENTAL CLINICAL NOTE")
+            if note_start == -1:
+                # If the model didn't include our header, add it
+                current_date = datetime.now().strftime("%B %d, %Y")
+                current_time = datetime.now().strftime("%I:%M %p")
+                header = f"""DENTAL CLINICAL NOTE
 Date: {current_date}
 Time: {current_time}
 Patient: {patient_name}
 
 """
-        
-        final_note = header + note + "\n\nNote: This clinical note was generated from voice transcription. Please verify all information for accuracy."
-        logger.info(f"Generated clinical note: {final_note}")
-        
-        return final_note
+                clinical_note = header + clinical_note
+
+            logger.info("Successfully generated clinical note with DeepSeek")
+            return clinical_note
+
+        except Exception as e:
+            logger.error(f"Error during DeepSeek generation: {str(e)}")
+            return generate_basic_note(transcription, patient_name)
+
     except Exception as e:
-        logger.error(f"Error generating clinical note: {str(e)}")
+        logger.error(f"Error in generate_clinical_note: {str(e)}")
         logger.error(f"Full traceback: {traceback.format_exc()}")
+        return generate_basic_note(transcription, patient_name)
+
+def generate_basic_note(transcription, patient_name):
+    """Fallback function for basic note generation without AI."""
+    try:
+        current_date = datetime.now().strftime("%B %d, %Y")
+        current_time = datetime.now().strftime("%I:%M %p")
+        
+        note = f"""DENTAL CLINICAL NOTE
+Date: {current_date}
+Time: {current_time}
+Patient: {patient_name}
+
+CLINICAL NOTES:
+{transcription}
+
+Note: This clinical note was generated from voice transcription.
+Please verify all information for accuracy."""
+        
+        return note
+    except Exception as e:
+        logger.error(f"Error generating basic note: {str(e)}")
         return None
 
 # Initialize session data structure
