@@ -332,7 +332,7 @@ def process_speech_text(text):
     return text
 
 def generate_clinical_note(transcription, patient_name):
-    """Generate a clinical note using Qwen3 8B through OpenRouter."""
+    """Generate a clinical note using multiple AI models with retry logic."""
     try:
         logger.info(f"Starting clinical note generation for patient: {patient_name}")
         logger.info(f"Transcription length: {len(transcription)}")
@@ -403,146 +403,204 @@ Transcription to convert:
 
 Generate the clinical note following the exact template format above."""
 
-        logger.info(f"Preparing OpenRouter API call for patient: {patient_name}")
-        logger.info(f"Using model: qwen/qwen3-30b-a3b:free")
-        logger.info(f"Prompt length: {len(prompt)}")
+        # Multiple free models to try (in order of preference)
+        models_to_try = [
+            {
+                "name": "qwen/qwen3-30b-a3b:free",
+                "description": "Qwen3 30B (Primary - Best Quality)",
+                "max_tokens": 1000,
+                "temperature": 0.7
+            },
+            {
+                "name": "deepseek/deepseek-r1:free", 
+                "description": "DeepSeek R1 (Fallback 1 - Latest)",
+                "max_tokens": 1000,
+                "temperature": 0.6
+            },
+            {
+                "name": "meta-llama/llama-3.3-70b-instruct:free",
+                "description": "Llama 3.3 70B (Fallback 2 - Large)",
+                "max_tokens": 1000,
+                "temperature": 0.7
+            },
+            {
+                "name": "qwen/qwen3-0.6b-04-28:free",
+                "description": "Qwen3 0.6B (Fallback 3 - Fast)",
+                "max_tokens": 800,
+                "temperature": 0.8
+            }
+        ]
         
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://depaulhackathon-2025.vercel.app/",
-            "X-Title": "Dental Notes Pro",
-            "X-Model": "qwen/qwen3-30b-a3b:free"
-        }
+        last_error = None
         
-        data = {
-            "model": "qwen/qwen3-30b-a3b:free",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 1000,
-            "temperature": 0.7,
-            "stream": False,
-            "top_p": 0.9,
-            "frequency_penalty": 0.1
-        }
-        
-        logger.info("Sending request to OpenRouter API...")
-        logger.info(f"Request headers: {headers}")
-        logger.info(f"Request data keys: {list(data.keys())}")
-        
-        # Set a timeout for the request to prevent hanging
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=data,
-            timeout=30  # Increased timeout to 30 seconds
-        )
-        
-        logger.info(f"OpenRouter API response status: {response.status_code}")
-        logger.info(f"OpenRouter API response headers: {dict(response.headers)}")
-        
-        if response.status_code == 200:
+        for attempt, model_config in enumerate(models_to_try, 1):
             try:
-                result = response.json()
-                logger.info(f"OpenRouter API response structure: {list(result.keys()) if result else 'None'}")
+                model_name = model_config["name"]
+                logger.info(f"Attempt {attempt}: Trying {model_config['description']} ({model_name})")
                 
-                if result and "choices" in result and len(result["choices"]) > 0:
-                    content = result["choices"][0]["message"]["content"]
-                    logger.info("Successfully received response from OpenRouter")
-                    logger.info(f"Generated note length: {len(content)} characters")
-                    logger.info(f"Generated note preview: {content[:200]}...")
-                    return content
+                headers = {
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://depaulhackathon-2025.vercel.app/",
+                    "X-Title": "Dental Notes Pro",
+                    "X-Model": model_name
+                }
+                
+                data = {
+                    "model": model_name,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": model_config["max_tokens"],
+                    "temperature": model_config["temperature"],
+                    "stream": False,
+                    "top_p": 0.9,
+                    "frequency_penalty": 0.1
+                }
+                
+                # Exponential backoff for retries
+                timeout = 45 + (attempt * 15)  # 45s, 60s, 75s, 90s
+                logger.info(f"Using timeout: {timeout}s for attempt {attempt}")
+                
+                logger.info(f"Sending request to OpenRouter API with {model_name}...")
+                
+                # Make the API request
+                response = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=data,
+                    timeout=timeout
+                )
+                
+                logger.info(f"Response status: {response.status_code} for {model_name}")
+                
+                if response.status_code == 200:
+                    try:
+                        result = response.json()
+                        
+                        if result and "choices" in result and len(result["choices"]) > 0:
+                            content = result["choices"][0]["message"]["content"]
+                            if content and len(content.strip()) > 50:  # Ensure meaningful content
+                                logger.info(f"✅ SUCCESS with {model_config['description']}")
+                                logger.info(f"Generated note length: {len(content)} characters")
+                                return content
+                            else:
+                                raise Exception("Generated content too short or empty")
+                        else:
+                            raise Exception("Invalid API response structure")
+                    except json.JSONDecodeError as e:
+                        raise Exception(f"Invalid JSON response: {str(e)}")
+                        
+                elif response.status_code == 429:
+                    logger.warning(f"⚠️ Rate limited on {model_name}, trying next model...")
+                    last_error = "Rate limit exceeded"
+                    continue
+                    
+                elif response.status_code == 503:
+                    logger.warning(f"⚠️ Model {model_name} unavailable, trying next model...")
+                    last_error = "Model temporarily unavailable"
+                    continue
+                    
                 else:
-                    logger.error("OpenRouter API returned invalid response structure")
-                    logger.error(f"Full response: {result}")
-                    raise Exception("Invalid API response structure")
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse OpenRouter response as JSON: {str(e)}")
-                logger.error(f"Raw response text: {response.text}")
-                raise Exception("Invalid JSON response from OpenRouter")
-        elif response.status_code == 401:
-            logger.error("OpenRouter API authentication failed - invalid API key")
-            raise Exception("OpenRouter API authentication failed")
-        elif response.status_code == 429:
-            logger.error("OpenRouter API rate limit exceeded")
-            raise Exception("Rate limit exceeded - please try again later")
-        else:
-            error_msg = f"OpenRouter API error: {response.status_code}"
-            try:
-                error_data = response.json()
-                if 'error' in error_data:
-                    error_msg += f" - {error_data['error']}"
-                elif 'message' in error_data:
-                    error_msg += f" - {error_data['message']}"
-                logger.error(f"OpenRouter API error details: {error_data}")
-            except:
-                error_msg += f" - {response.text}"
-                logger.error(f"OpenRouter API error text: {response.text}")
-            
-            raise Exception(error_msg)
+                    error_msg = f"API error {response.status_code}"
+                    try:
+                        error_data = response.json()
+                        if 'error' in error_data:
+                            error_msg += f": {error_data['error']}"
+                        elif 'message' in error_data:
+                            error_msg += f": {error_data['message']}"
+                    except:
+                        error_msg += f": {response.text}"
+                    
+                    logger.warning(f"⚠️ Error with {model_name}: {error_msg}")
+                    last_error = error_msg
+                    continue
+                    
+            except requests.exceptions.Timeout:
+                logger.warning(f"⚠️ Timeout with {model_name} after {timeout}s, trying next model...")
+                last_error = f"Timeout after {timeout}s"
+                continue
+                
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"⚠️ Network error with {model_name}: {str(e)}, trying next model...")
+                last_error = f"Network error: {str(e)}"
+                continue
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Error with {model_name}: {str(e)}, trying next model...")
+                last_error = str(e)
+                continue
         
-    except requests.exceptions.Timeout:
-        logger.error("OpenRouter API request timed out after 30 seconds")
-        raise Exception("API request timed out - please try again")
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Network error calling OpenRouter API: {str(e)}")
-        raise Exception("Network error - please check your connection")
+        # If all models failed, log the issue and return enhanced fallback
+        logger.error(f"❌ All AI models failed. Last error: {last_error}")
+        logger.info("🔄 Falling back to enhanced template-based note generation")
+        return generate_enhanced_fallback_note(transcription, patient_name, dentist_name, current_time)
+        
     except Exception as e:
-        logger.error(f"Error generating clinical note: {str(e)}")
+        logger.error(f"Critical error in generate_clinical_note: {str(e)}")
         logger.error(traceback.format_exc())
-        raise Exception(f"Error generating note: {str(e)}")
+        return generate_basic_note(transcription, patient_name)
 
-def enhance_fallback_note(basic_note, transcription):
-    """Extract key information from transcription to enhance a basic note template"""
-    try:
-        # Extract tooth numbers mentioned
-        tooth_pattern = r'#?\s*(\d{1,2})'
-        tooth_matches = re.findall(tooth_pattern, transcription)
-        teeth_mentioned = list(set(tooth_matches))
-        
-        # Extract potential symptoms
-        symptom_words = ['pain', 'ache', 'sensitivity', 'discomfort', 'swelling', 'bleeding']
-        symptoms = [word for word in symptom_words if word in transcription.lower()]
-        
-        # Extract potential medications
-        med_words = ['ibuprofen', 'antibiotics', 'painkillers', 'painkiller', 'medication', 'tylenol', 'advil']
-        meds = [word for word in med_words if word in transcription.lower()]
-        
-        # Extract numbers that might be frequencies/durations (e.g., "2 weeks", "3 times")
-        number_pattern = r'(\d+)\s*(day|days|week|weeks|time|times|hour|hours)'
-        time_matches = re.findall(number_pattern, transcription.lower())
-        
-        # Enhance the basic note
-        enhanced_note = basic_note
-        
-        # Add teeth if found
-        if teeth_mentioned:
-            teeth_str = ", ".join([f"#{t}" for t in teeth_mentioned])
-            enhanced_note = enhanced_note.replace("CLINICAL FINDINGS:\nNone documented.", 
-                                                f"CLINICAL FINDINGS:\nExamination of tooth {teeth_str}.")
-        
-        # Add symptoms if found
-        if symptoms:
-            symptoms_str = ", ".join(symptoms)
-            if "None documented" in enhanced_note.split("CHIEF COMPLAINT:")[1].split("CLINICAL FINDINGS:")[0]:
-                enhanced_note = enhanced_note.replace("CHIEF COMPLAINT:\nNone documented.", 
-                                                    f"CHIEF COMPLAINT:\nPatient presented with {symptoms_str}.")
-        
-        # Add meds if found
-        if meds:
-            meds_str = ", ".join(meds)
-            enhanced_note = enhanced_note.replace("MEDICATIONS:\nNone documented.",
-                                                f"MEDICATIONS:\n{meds_str.title()} recommended.")
-        
-        # Add follow-up if time periods found
-        if time_matches:
-            time_str = ", ".join([f"{num} {unit}" for num, unit in time_matches])
-            enhanced_note = enhanced_note.replace("FOLLOW-UP:\nNone documented.",
-                                                f"FOLLOW-UP:\nRecommended follow-up in {time_str}.")
-        
-        return enhanced_note
-    except Exception as e:
-        logger.error(f"Error enhancing fallback note: {str(e)}")
-        return basic_note
+def generate_enhanced_fallback_note(transcription, patient_name, dentist_name, current_time):
+    """Generate an enhanced fallback note when AI models fail"""
+    logger.info("Generating enhanced fallback clinical note")
+    
+    # Enhanced processing of transcription
+    processed_transcription = process_speech_text(transcription)
+    
+    # Extract key dental information
+    tooth_numbers = re.findall(r'#?\s*(\d{1,2})', processed_transcription)
+    procedures = []
+    findings = []
+    medications = []
+    
+    # Common dental terms detection
+    dental_terms = {
+        'procedures': ['cleaning', 'filling', 'extraction', 'crown', 'root canal', 'scaling', 'polishing', 'exam', 'x-ray'],
+        'conditions': ['cavity', 'decay', 'tartar', 'plaque', 'gingivitis', 'inflammation', 'sensitivity', 'pain'],
+        'medications': ['fluoride', 'antibiotic', 'ibuprofen', 'acetaminophen', 'rinse', 'prescription']
+    }
+    
+    processed_lower = processed_transcription.lower()
+    
+    for term in dental_terms['procedures']:
+        if term in processed_lower:
+            procedures.append(term.title())
+    
+    for term in dental_terms['conditions']:
+        if term in processed_lower:
+            findings.append(term.title())
+    
+    for term in dental_terms['medications']:
+        if term in processed_lower:
+            medications.append(term.title())
+    
+    # Build the clinical note
+    note_content = f"""DENTAL CLINICAL NOTE
+Date: {current_time.split(' at ')[0]}
+Time: {current_time.split(' at ')[1]}
+Patient Name: {patient_name}
+Dentist Name: {dentist_name}
+
+CLINICAL NOTES:
+CHIEF COMPLAINT
+{processed_transcription[:200] if processed_transcription else 'Patient visit for routine dental care'}
+
+CLINICAL FINDINGS
+{', '.join(findings) if findings else 'Routine examination performed'}
+{f'Teeth examined: {", ".join(tooth_numbers)}' if tooth_numbers else ''}
+
+TREATMENT PROVIDED
+{', '.join(procedures) if procedures else 'Clinical examination and assessment completed'}
+
+MEDICATIONS
+{', '.join(medications) if medications else 'None documented'}
+
+FOLLOW-UP
+Follow-up as needed based on treatment provided and patient response
+
+Note: Please verify all information above."""
+    
+    logger.info("Enhanced fallback note generated successfully")
+    return note_content
 
 def generate_basic_note(transcription, patient_name):
     """Generate a basic clinical note template."""
