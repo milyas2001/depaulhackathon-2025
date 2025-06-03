@@ -12,147 +12,329 @@
     <title>Dental Notes - Dashboard</title>
     <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <style>
+      body {
+        font-family: Manrope, "Noto Sans", sans-serif;
+        background-color: #141414;
+      }
+    </style>
   </head>
-  <body>
-    <div class="relative flex size-full min-h-screen flex-col bg-[#141414] dark group/design-root overflow-x-hidden" style='font-family: Manrope, "Noto Sans", sans-serif;'>
-      <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#303030] px-10 py-3">
-        <div class="flex items-center gap-4 text-white">
-          <div class="size-4">
-            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z"
-                fill="currentColor"
-              ></path>
+  <body class="bg-[#141414] text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-[#0a0a0a] border-b border-gray-800">
+      <div class="container mx-auto px-6 py-3">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <span class="text-xl font-bold">Dental Notes</span>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-gray-400">Welcome, {{ dentist.name }}</span>
+            <a href="{{ url_for('logout') }}" class="px-3 py-1 rounded-lg bg-transparent border border-gray-700 hover:bg-gray-800 text-sm transition">Sign Out</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8">
+      <!-- Quick Action Buttons - New, more prominent section -->
+      <div class="bg-gradient-to-r from-blue-900/40 to-purple-900/40 rounded-2xl p-8 mb-8 border border-blue-800/50 shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <a href="{{ url_for('start_recording') }}?new=true" class="group bg-blue-600 hover:bg-blue-700 rounded-xl p-6 flex items-center transition transform hover:scale-[1.02]">
+            <div class="bg-white/20 p-4 rounded-full mr-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold">Add New Patient</h3>
+              <p class="text-blue-100">Register a new patient in your system</p>
+            </div>
+          </a>
+          <a href="{{ url_for('start_recording') }}" class="group bg-green-600 hover:bg-green-700 rounded-xl p-6 flex items-center transition transform hover:scale-[1.02]">
+            <div class="bg-white/20 p-4 rounded-full mr-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold">Start Recording</h3>
+              <p class="text-green-100">Create a new clinical note for a patient</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <h1 class="text-3xl font-bold mb-4 md:mb-0">Dashboard</h1>
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+          <a href="{{ url_for('patients_page') }}" class="px-4 py-2 bg-[#303030] hover:bg-[#404040] rounded-lg text-center transition flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
-          </div>
-          <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Dental Notes</h2>
+            All Patients
+          </a>
+          <a href="{{ url_for('start_recording') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-center transition flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            New Recording
+          </a>
         </div>
-        <div class="flex flex-1 justify-end gap-8">
-          <div class="flex items-center gap-9">
-            <a class="text-white text-sm font-medium leading-normal" href="/">Home</a>
-            <a class="text-white text-sm font-medium leading-normal" href="/dashboard">Dashboard</a>
-            <a class="text-white text-sm font-medium leading-normal" href="/patients">Patients</a>
-            <a class="text-white text-sm font-medium leading-normal" href="#">Notes</a>
-            <a class="text-white text-sm font-medium leading-normal" href="#">Settings</a>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Patients -->
+        <div class="bg-[#212121] rounded-xl p-6 border border-gray-800">
+          <div class="flex items-center">
+            <div class="p-3 bg-blue-600/20 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h2 class="text-gray-400 text-sm">Total Patients Served</h2>
+              <p class="text-2xl font-bold">{{ recent_patients|length }}</p>
+            </div>
           </div>
-          <div
-            class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-ZHU9iSG-GvNjLz4EL6xUmAsW3rCaOpcl7bWOX_FjMShd3WtJ8wnPOAWZoZfHpexMuAmv6EC6h7hLiFvuoOW2rbJJ8PcnypaBK4fWwWTouAebEvyMGBZIq2r2riZOr234mKjyH0iHfUZc3Dryfq80WKiRcxsr7KMLC-vqpqxUIQexoTKOU9xVBZUhN2ad2TZB1fuLrbPOOSpmLqoEoQU1thbSEROkG7Rdj88Xmv66XJvn73DFkuBu0qUfoHz6vXbFXjlM2O-2dik");'
-          ></div>
         </div>
-      </header>
-
-      <div class="px-40 flex flex-1 justify-center py-5">
-        <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
-          <div class="flex flex-wrap justify-between gap-3 p-4">
-            <div class="flex min-w-72 flex-col gap-3">
-              <h1 class="text-white tracking-light text-[32px] font-bold leading-tight">Dashboard</h1>
-              <p class="text-[#ababab] text-sm font-normal leading-normal">View and manage your patients and notes</p>
+        
+        <!-- Clinical Notes -->
+        <div class="bg-[#212121] rounded-xl p-6 border border-gray-800">
+          <div class="flex items-center">
+            <div class="p-3 bg-green-600/20 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-            <button
-              onclick="window.location.href='/patients'"
-              class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-black text-white text-sm font-bold leading-normal tracking-[0.015em]"
-            >
-              <span class="truncate">View All Patients</span>
-            </button>
-          </div>
-
-          <!-- New Patient Form -->
-          <div class="p-4 bg-[#1a1a1a] rounded-xl mb-6">
-            <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Add New Patient</h2>
-            <div class="flex gap-4">
-              <div class="flex-1">
-                <label class="block text-white text-sm font-medium mb-2" for="patientName">Patient Name</label>
-                <input
-                  type="text"
-                  id="patientName"
-                  class="form-input flex w-full min-w-0 overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#303030] focus:border-none h-10 placeholder:text-[#ababab] px-4 text-base font-normal leading-normal"
-                  placeholder="Enter patient name"
-                />
-              </div>
-              <div class="flex-1">
-                <label class="block text-white text-sm font-medium mb-2" for="patientId">Patient ID</label>
-                <input
-                  type="text"
-                  id="patientId"
-                  class="form-input flex w-full min-w-0 overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#303030] focus:border-none h-10 placeholder:text-[#ababab] px-4 text-base font-normal leading-normal"
-                  placeholder="Enter patient ID"
-                />
-              </div>
-              <div class="flex items-end">
-                <button
-                  id="startNoteTaking"
-                  disabled
-                  class="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-black text-white text-sm font-bold leading-normal tracking-[0.015em] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span class="truncate">Start Note</span>
-                </button>
-              </div>
+            <div class="ml-4">
+              <h2 class="text-gray-400 text-sm">Clinical Notes</h2>
+              <p class="text-2xl font-bold">--</p>
             </div>
           </div>
-
-          <!-- Recent Patients -->
-          <div class="p-4">
-            <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Recent Patients</h2>
-            <div class="grid grid-cols-1 gap-4">
-              {% if recent_patients %}
-                {% for patient in recent_patients %}
-                  <div class="flex items-center justify-between bg-[#303030] rounded-xl p-4">
-                    <div class="flex flex-col">
-                      <span class="text-white text-base font-medium">{{ patient.name }}</span>
-                      <span class="text-[#ababab] text-sm">ID: {{ patient.id }}</span>
-                    </div>
-                    <div class="flex gap-2">
-                      <button
-                        onclick="window.location.href='/patient/{{ patient.id }}'"
-                        class="flex items-center justify-center rounded-full h-8 px-3 bg-[#212121] text-white text-sm font-bold"
-                      >
-                        View History
-                      </button>
-                      <button
-                        onclick="window.location.href='/start-recording?patient_id={{ patient.id }}'"
-                        class="flex items-center justify-center rounded-full h-8 px-3 bg-black text-white text-sm font-bold"
-                      >
-                        New Note
-                      </button>
-                    </div>
-                  </div>
-                {% endfor %}
-              {% else %}
-                <p class="text-[#ababab] text-sm">No recent patients</p>
-              {% endif %}
+        </div>
+        
+        <!-- AI Generated -->
+        <div class="bg-[#212121] rounded-xl p-6 border border-gray-800">
+          <div class="flex items-center">
+            <div class="p-3 bg-purple-600/20 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h2 class="text-gray-400 text-sm">AI Generated</h2>
+              <p class="text-2xl font-bold">--</p>
             </div>
           </div>
-
-          <!-- Recent Notes -->
-          <div class="p-4">
-            <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Recent Notes</h2>
-            <div class="grid grid-cols-1 gap-4">
-              {% if recent_notes %}
-                {% for note in recent_notes %}
-                  <div class="flex flex-col bg-[#303030] rounded-xl p-4">
-                    <div class="flex justify-between items-center mb-2">
-                      <span class="text-[#ababab] text-sm">{{ note.timestamp }}</span>
-                      <button
-                        onclick="window.location.href='/view-note/{{ note.id }}'"
-                        class="flex items-center justify-center rounded-full h-8 px-3 bg-black text-white text-sm font-bold"
-                      >
-                        View Note
-                      </button>
-                    </div>
-                    <p class="text-white text-base font-normal leading-normal line-clamp-2">
-                      {{ note.content[:200] }}{% if note.content|length > 200 %}...{% endif %}
-                    </p>
-                  </div>
-                {% endfor %}
-              {% else %}
-                <p class="text-[#ababab] text-sm">No recent notes</p>
-              {% endif %}
+        </div>
+        
+        <!-- Time Saved -->
+        <div class="bg-[#212121] rounded-xl p-6 border border-gray-800">
+          <div class="flex items-center">
+            <div class="p-3 bg-amber-600/20 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h2 class="text-gray-400 text-sm">Time Saved</h2>
+              <p class="text-2xl font-bold">--</p>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Recent Patients -->
+      <div class="bg-[#1a1a1a] rounded-xl p-6 border border-gray-800">
+        <h2 class="text-xl font-bold mb-6">Recent Patients</h2>
+        
+        {% if recent_patients %}
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for patient in recent_patients %}
+              <div class="patient-card-item bg-[#212121] rounded-xl p-5 border border-gray-800 hover:border-blue-500/30 transition" data-patient-id="{{ patient.id }}">
+                <div class="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 class="font-bold text-lg">{{ patient.name }}</h3>
+                    <p class="text-gray-400 text-sm">ID: {{ patient.id[:8] }}</p>
+                  </div>
+                  <span class="bg-blue-600/20 text-blue-400 text-xs px-2 py-1 rounded">Patient</span>
+                </div>
+                <div class="mb-4">
+                  <p class="text-gray-400 text-sm">Last Visit: {{ patient.last_visit.split('T')[0] }}</p>
+                </div>
+                <div class="flex space-x-2">
+                  <a href="{{ url_for('patient_notes_page', patient_id=patient.id) }}" class="px-3 py-2 bg-[#303030] hover:bg-[#404040] rounded-lg text-sm text-center flex-1 transition">View History</a>
+                  <a href="{{ url_for('record', patient_id=patient.id) }}" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm text-center flex-1 transition">New Note</a>
+                  <button 
+                    type="button" 
+                    class="delete-patient-button px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm text-center flex-1 transition text-white"
+                    data-patient-id="{{ patient.id }}"
+                    data-patient-name="{{ patient.name }}"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="bg-[#212121] rounded-xl p-6 border border-gray-800 text-center">
+            <p class="text-gray-400 mb-4">You don't have any patients yet.</p>
+            <a href="{{ url_for('start_recording') }}?new=true" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg inline-block transition">Add Your First Patient</a>
+          </div>
+        {% endif %}
+      </div>
     </div>
+
+    <!-- Add the delete confirmation modal -->
+    <div id="deleteConfirmModal" class="fixed inset-0 hidden bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-[#212121] border border-gray-700 rounded-xl shadow-xl p-6 max-w-md w-full">
+        <div class="mb-5">
+          <h3 class="text-xl font-bold mb-2">Confirm Deletion</h3>
+          <p class="text-gray-300">Are you sure you want to delete this patient? This action cannot be undone and will delete all associated patient records and notes.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 justify-end">
+          <button id="cancelDeleteBtn" class="px-5 py-2 bg-[#303030] hover:bg-[#404040] text-white rounded-lg transition">
+            No, Cancel
+          </button>
+          <button id="confirmDeleteBtn" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+            Yes, Delete
+          </button>
+        </div>
+        <!-- Hidden fields to store patient information -->
+        <input type="hidden" id="deletePatientId" value="">
+        <input type="hidden" id="deletePatientName" value="">
+        <input type="hidden" id="deleteButtonRef" value="">
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Add event listeners for delete patient buttons
+        document.querySelectorAll('.delete-patient-button').forEach(button => {
+          button.addEventListener('click', (event) => {
+            const patientId = event.target.dataset.patientId;
+            const patientName = event.target.dataset.patientName;
+            
+            if (!patientId || !patientName) {
+              alert('Error: Patient ID or Name not found.');
+              return;
+            }
+
+            // Show the custom confirmation modal
+            const modal = document.getElementById('deleteConfirmModal');
+            const deletePatientIdField = document.getElementById('deletePatientId');
+            const deletePatientNameField = document.getElementById('deletePatientName');
+            const deleteButtonRefField = document.getElementById('deleteButtonRef');
+            
+            // Store patient information in hidden fields
+            deletePatientIdField.value = patientId;
+            deletePatientNameField.value = patientName;
+            deleteButtonRefField.value = event.target.closest('.patient-card-item').dataset.patientId;
+            
+            // Show the modal
+            modal.classList.remove('hidden');
+          });
+        });
+
+        // Handle cancel button in modal
+        document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+          const modal = document.getElementById('deleteConfirmModal');
+          modal.classList.add('hidden');
+        });
+
+        // Handle confirm deletion button in modal
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+          const patientId = document.getElementById('deletePatientId').value;
+          const patientName = document.getElementById('deletePatientName').value;
+          const modal = document.getElementById('deleteConfirmModal');
+          
+          if (!patientId || !patientName) {
+            alert('Error: Patient information missing.');
+            return;
+          }
+
+          try {
+            // Show loading state
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const originalText = confirmBtn.textContent;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Deleting...';
+
+            const response = await fetch(`/delete-patient/${patientId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+              // Close modal
+              modal.classList.add('hidden');
+              
+              // Remove the patient card from the UI
+              const patientCard = document.querySelector(`[data-patient-id="${patientId}"]`);
+              if (patientCard) {
+                patientCard.remove();
+                
+                // Update the Total Patients counter
+                const totalPatientsElement = document.querySelector('.text-2xl.font-bold');
+                if (totalPatientsElement) {
+                  const currentCount = parseInt(totalPatientsElement.textContent) || 0;
+                  const newCount = Math.max(0, currentCount - 1);
+                  totalPatientsElement.textContent = newCount;
+                }
+                
+                // Check if there are any remaining patients
+                const remainingPatients = document.querySelectorAll('.patient-card-item');
+                if (remainingPatients.length === 0) {
+                  // Show the "no patients" message
+                  const patientsContainer = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.gap-6');
+                  if (patientsContainer) {
+                    patientsContainer.innerHTML = `
+                      <div class="bg-[#212121] rounded-xl p-6 border border-gray-800 text-center col-span-full">
+                        <p class="text-gray-400 mb-4">You don't have any patients yet.</p>
+                        <a href="${window.location.origin}/start_recording?new=true" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg inline-block transition">Add Your First Patient</a>
+                      </div>
+                    `;
+                  }
+                }
+                
+                alert(`Patient "${patientName}" deleted successfully.`);
+              } else {
+                console.warn('Could not find patient card to remove. Patient ID:', patientId);
+                alert('Patient deleted successfully. Please refresh the page to see the updated list.');
+              }
+            } else {
+              throw new Error(result.error || 'Failed to delete patient');
+            }
+          } catch (error) {
+            console.error('Error deleting patient:', error);
+            alert(`Failed to delete patient: ${error.message}`);
+          } finally {
+            // Restore button state
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Yes, Delete';
+            
+            // Hide modal
+            modal.classList.add('hidden');
+          }
+        });
+
+        // Close modal when clicking outside of it
+        document.getElementById('deleteConfirmModal').addEventListener('click', function(event) {
+          if (event.target === this) {
+            this.classList.add('hidden');
+          }
+        });
+      });
+    </script>
   </body>
 </html> 

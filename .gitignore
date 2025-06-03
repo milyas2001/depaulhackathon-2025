@@ -47,3 +47,4 @@ data/
 *.pyc
 *.pyo
 *.pyd 
+.vercel

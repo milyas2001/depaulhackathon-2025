@@ -80,7 +80,7 @@
               <h3 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">Patient List</h3>
               <div id="allPatientsList">
                 {% if patients %}
-                  {% for patient_id, patient in patients.items() %}
+                  {% for patient in patients %}
                     <div class="flex items-center justify-between bg-[#303030] rounded-xl p-4 mb-4">
                       <div class="flex flex-col">
                         <span class="text-white text-base font-medium">{{ patient.name }}</span>

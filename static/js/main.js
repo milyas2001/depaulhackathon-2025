@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('startRecording');
     const pauseButton = document.getElementById('pauseRecording');
     const stopButton = document.getElementById('stopRecording');
-    const transcriptionArea = document.querySelector('.real-time-transcription');
+    const transcriptionArea = document.getElementById('transcriptionArea') || document.querySelector('.real-time-transcription');
     
     // Transcription screen elements
     const transcriptionEditArea = document.getElementById('transcriptionText');
@@ -86,18 +86,45 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
+        recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
             console.log('Speech recognition started');
             if (transcriptionArea) {
-                transcriptionArea.textContent = 'Listening...';
+                transcriptionArea.textContent = 'Listening... Start speaking!';
+                transcriptionArea.style.border = '2px solid #22c55e'; // Green border when listening
+            }
+        };
+
+        recognition.onend = () => {
+            console.log('Speech recognition ended');
+            if (isRecording && !isPaused) {
+                // Restart recognition if we're still recording (it stops after silence)
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                    } catch (error) {
+                        console.log('Recognition restart failed:', error);
+                    }
+                }, 100);
+            } else {
+                if (transcriptionArea) {
+                    transcriptionArea.style.border = '1px solid #374151'; // Reset border
+                }
             }
         };
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
             if (transcriptionArea) {
-                transcriptionArea.textContent = 'Error: ' + event.error;
+                if (event.error === 'no-speech') {
+                    transcriptionArea.textContent = transcriptionText || 'No speech detected. Continue speaking...';
+                } else if (event.error === 'network') {
+                    transcriptionArea.textContent = transcriptionText || 'Network error. Please check your connection.';
+                } else {
+                    transcriptionArea.textContent = transcriptionText || `Error: ${event.error}`;
+                }
+                transcriptionArea.style.border = '2px solid #ef4444'; // Red border on error
             }
         };
 
@@ -133,7 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     stopRecording(recognition);
                     // Save transcription and navigate to review screen
                     localStorage.setItem('transcription', transcriptionText);
-                    window.location.href = '/transcription';
+                    
+                    // Get patient ID from the URL
+                    const currentUrl = window.location.pathname;
+                    const patientId = currentUrl.split('/').pop();
+                    
+                    // Redirect to transcription page with patient ID
+                    window.location.href = `/transcription/${patientId}`;
                 }
             });
         }
@@ -149,57 +182,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (saveTranscriptionButton) {
-        saveTranscriptionButton.addEventListener('click', async () => {
+        saveTranscriptionButton.addEventListener('click', function(e) {
             const transcriptionEditArea = document.getElementById('transcriptionText');
             if (!transcriptionEditArea || !transcriptionEditArea.value.trim()) {
                 alert('Please enter some transcription text before saving.');
+                e.preventDefault();
                 return;
             }
 
-            try {
-                saveTranscriptionButton.disabled = true;
-                saveTranscriptionButton.innerHTML = '<span class="loading">Saving transcription...</span>';
+            // Show loading animation on the button
+            saveTranscriptionButton.disabled = true;
+            saveTranscriptionButton.innerHTML = '<span class="loading">Processing...</span>';
 
-                const transcriptionText = transcriptionEditArea.value.trim();
-                
-                // First, save the raw transcription
-                const response = await fetch('/save-transcription', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        transcription: transcriptionText
-                    }),
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.status === 'success') {
-                        // Clear localStorage since we've saved to server
-                        localStorage.removeItem('transcription');
-                        
-                        // Show processing message
-                        saveTranscriptionButton.innerHTML = '<span class="loading">Redirecting to clinical record...</span>';
-                        
-                        // Navigate to clinical record generation page
-                        window.location.href = '/generate-clinical-record';
-                    } else {
-                        alert('Error: ' + (result.error || 'Failed to save transcription'));
-                    }
-                } else {
-                    const error = await response.json();
-                    alert('Error saving transcription: ' + (error.error || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error saving transcription:', error);
-                alert('Error saving transcription. Please try again.');
-            } finally {
-                if (saveTranscriptionButton.disabled) {
-                    saveTranscriptionButton.disabled = false;
-                    saveTranscriptionButton.innerHTML = '<span>Save & Continue</span>';
-                }
-            }
+            // Form will submit normally - no need for AJAX request
+            // The transcription will be sent to the backend via form POST
+            
+            // Clear the localStorage after submission
+            localStorage.removeItem('transcription');
         });
     }
 
@@ -316,6 +315,161 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enable search on button click
         searchButton.addEventListener('click', performSearch);
     }
+
+    // Add event listeners for delete patient buttons
+    document.querySelectorAll('.delete-patient-button').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const patientId = event.target.dataset.patientId;
+            const patientName = event.target.dataset.patientName;
+            
+            if (!patientId || !patientName) {
+                alert('Error: Patient ID or Name not found.');
+                return;
+            }
+
+            // Show the custom confirmation modal instead of using confirm()
+            const modal = document.getElementById('deleteConfirmModal');
+            const deletePatientIdField = document.getElementById('deletePatientId');
+            const deletePatientNameField = document.getElementById('deletePatientName');
+            const deleteButtonRefField = document.getElementById('deleteButtonRef');
+            
+            if (modal && deletePatientIdField && deletePatientNameField) {
+                // Store the patient info and button reference in hidden fields
+                deletePatientIdField.value = patientId;
+                deletePatientNameField.value = patientName;
+                deleteButtonRefField.value = event.target.id || Date.now(); // Use ID or timestamp as reference
+                
+                // Add reference to button as a data attribute
+                modal.dataset.triggerButton = event.target.id || '';
+                
+                // Display the modal
+                modal.classList.remove('hidden');
+            } else {
+                console.error('Delete confirmation modal or fields not found in the DOM');
+            }
+        });
+    });
+
+    // Handle modal button clicks
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    
+    if (confirmDeleteBtn && deleteModal) {
+        confirmDeleteBtn.addEventListener('click', async () => {
+            // Get patient info from hidden fields
+            const patientId = document.getElementById('deletePatientId').value;
+            const patientName = document.getElementById('deletePatientName').value;
+            
+            if (!patientId) {
+                hideDeleteModal();
+                return;
+            }
+            
+            try {
+                // Disable the button and show processing state
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.innerHTML = '<span class="inline-block">Deleting...</span>';
+                
+                console.log(`Proceeding with deletion of patient: ${patientId}`);
+                
+                const response = await fetch(`/delete-patient/${patientId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                console.log('Delete response status:', response.status);
+                const result = await response.json();
+                console.log('Delete response data:', result);
+                
+                if (response.ok && result.success) {
+                    console.log(`Successfully deleted patient: ${patientId}`);
+                    
+                    // Find the patient card to remove from the UI
+                    const patientCard = findPatientCard(patientId);
+                    
+                    if (patientCard) {
+                        // Remove the patient card from the DOM
+                        patientCard.remove();
+                        
+                        // Update the patient counter if it exists
+                        updatePatientCounter(-1);
+                    } else {
+                        console.warn(`Could not find patient card for ID: ${patientId}`);
+                    }
+                    
+                    // Show success message
+                    alert(`Patient "${patientName}" deleted successfully.`);
+                } else {
+                    console.error(`Error deleting patient: ${result.error || 'Unknown error'}`);
+                    alert(`Error deleting patient: ${result.error || 'Unknown server error'}`);
+                }
+            } catch (error) {
+                console.error('Error in delete operation:', error);
+                alert('An unexpected error occurred while deleting the patient.');
+            } finally {
+                // Hide the modal and reset its state
+                hideDeleteModal();
+            }
+        });
+    }
+    
+    if (cancelDeleteBtn && deleteModal) {
+        cancelDeleteBtn.addEventListener('click', () => {
+            hideDeleteModal();
+        });
+    }
+    
+    // Helper function to hide the delete modal
+    function hideDeleteModal() {
+        const modal = document.getElementById('deleteConfirmModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            
+            // Reset button state
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Yes, Delete';
+            }
+            
+            // Clear the stored values
+            const idField = document.getElementById('deletePatientId');
+            const nameField = document.getElementById('deletePatientName');
+            if (idField) idField.value = '';
+            if (nameField) nameField.value = '';
+        }
+    }
+    
+    // Helper function to find patient card by ID
+    function findPatientCard(patientId) {
+        // Try to find the patient card using the ID attribute
+        let card = document.querySelector(`.patient-card-item[data-patient-id="${patientId}"]`);
+        
+        // If not found, search for a card containing a button with the matching data-patient-id
+        if (!card) {
+            const deleteButton = document.querySelector(`button[data-patient-id="${patientId}"]`);
+            if (deleteButton) {
+                card = deleteButton.closest('.patient-card-item');
+            }
+        }
+        
+        return card;
+    }
+    
+    // Helper function to update the patient counter
+    function updatePatientCounter(change) {
+        const patientCountElement = document.querySelector('.text-2xl.font-bold');
+        if (patientCountElement) {
+            const currentCount = parseInt(patientCountElement.textContent);
+            if (!isNaN(currentCount)) {
+                patientCountElement.textContent = (currentCount + change).toString();
+            }
+        }
+    }
 });
 
 async function loadRecentPatients() {
@@ -363,59 +517,167 @@ function selectPatient(name, id) {
 }
 
 function startRecording(recognition) {
-    isRecording = true;
-    isPaused = false;
-    transcriptionText = '';
-    
-    try {
-        recognition.start();
+    if (!isRecording) {
+        isRecording = true;
+        isPaused = false;
+        transcriptionText = '';  // Reset transcription
+        
+        // Clear any existing cursor
+        const existingCursor = document.querySelector('.cursor');
+        if (existingCursor) {
+            existingCursor.remove();
+        }
         
         recognition.onresult = (event) => {
-            const transcript = Array.from(event.results)
-                .map(result => result[0].transcript)
-                .join('');
+            let finalTranscript = '';
+            let interimTranscript = '';
             
-            transcriptionText = transcript;
-            updateTranscriptionDisplay(transcript);
+            // Process all results from the current recognition session
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript + ' ';
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+            
+            // Store the cumulative final transcript
+            if (finalTranscript) {
+                transcriptionText += finalTranscript;
+                console.log('Final transcript added:', finalTranscript);
+            }
+            
+            // Update display with both final and interim results in real-time
+            const combinedText = transcriptionText + interimTranscript;
+            console.log('Updating display with:', combinedText);
+            updateTranscriptionDisplay(combinedText);
         };
-    } catch (error) {
-        console.error('Error starting recording:', error);
-        alert('Error starting recording. Please try again.');
+        
+        recognition.onspeechstart = () => {
+            console.log('Speech detected - real-time transcription starting');
+            if (transcriptionArea) {
+                transcriptionArea.style.border = '2px solid #22c55e';
+            }
+        };
+        
+        recognition.onspeechend = () => {
+            console.log('Speech ended - waiting for more speech');
+        };
+        
+        try {
+            recognition.start();
+            console.log('Recording started - speak now for real-time transcription');
+        } catch (error) {
+            console.error('Failed to start recognition:', error);
+            if (transcriptionArea) {
+                transcriptionArea.textContent = 'Failed to start speech recognition. Please try again.';
+            }
+        }
     }
 }
 
 function pauseRecording(recognition) {
-    isPaused = true;
-    try {
+    if (isRecording && !isPaused) {
         recognition.stop();
-    } catch (error) {
-        console.error('Error pausing recording:', error);
+        isPaused = true;
+        console.log('Recording paused');
     }
 }
 
 function resumeRecording(recognition) {
-    isPaused = false;
-    try {
+    if (isRecording && isPaused) {
         recognition.start();
-    } catch (error) {
-        console.error('Error resuming recording:', error);
+        isPaused = false;
+        console.log('Recording resumed');
     }
 }
 
 function stopRecording(recognition) {
-    isRecording = false;
-    isPaused = false;
-    try {
+    if (isRecording) {
         recognition.stop();
-    } catch (error) {
-        console.error('Error stopping recording:', error);
+        isRecording = false;
+        isPaused = false;
+        
+        // Remove blinking cursor
+        const cursor = document.querySelector('.cursor');
+        if (cursor) {
+            cursor.remove();
+        }
+        
+        // Reset border style
+        if (transcriptionArea) {
+            transcriptionArea.style.border = '1px solid #374151';
+        }
+        
+        // Ensure we have transcription text
+        if (!transcriptionText.trim()) {
+            // Get text from the display area as fallback
+            const displayArea = document.getElementById('transcriptionArea');
+            if (displayArea) {
+                const textContent = displayArea.textContent || displayArea.innerText || '';
+                // Remove any placeholder text
+                if (textContent && !textContent.includes('Listening') && !textContent.includes('Error')) {
+                    transcriptionText = textContent;
+                }
+            }
+        }
+        
+        console.log('Recording stopped. Final transcription:', transcriptionText);
+        
+        // Show completion message
+        if (transcriptionArea && transcriptionText.trim()) {
+            transcriptionArea.innerHTML = `<span style="color: #ffffff;">${transcriptionText}</span><br><br><span style="color: #22c55e; font-style: italic;">✓ Recording completed! Redirecting to review...</span>`;
+        }
     }
 }
 
 function updateTranscriptionDisplay(text) {
-    const transcriptionArea = document.querySelector('.real-time-transcription');
+    const transcriptionArea = document.getElementById('transcriptionArea');
     if (transcriptionArea) {
-        transcriptionArea.textContent = text || 'No transcription available';
+        if (!text || text.trim() === '') {
+            transcriptionArea.innerHTML = '<span style="color: #6b7280; font-style: italic;">Listening... Start speaking!</span>';
+        } else {
+            // Split the text into final (stored) and interim (current) parts
+            const finalText = transcriptionText || '';
+            const currentText = text.replace(finalText, '');
+            
+            // Create HTML with different styling for final vs interim text
+            let displayHTML = '';
+            if (finalText) {
+                displayHTML += `<span style="color: #ffffff;">${finalText}</span>`;
+            }
+            if (currentText) {
+                displayHTML += `<span style="color: #3b82f6; font-style: italic; background: rgba(59, 130, 246, 0.1); padding: 0 2px; border-radius: 2px;">${currentText}</span>`;
+            }
+            
+            transcriptionArea.innerHTML = displayHTML;
+        }
+        
+        // Auto-scroll to bottom
+        transcriptionArea.scrollTop = transcriptionArea.scrollHeight;
+        
+        // Add a blinking cursor effect
+        if (isRecording && !transcriptionArea.querySelector('.cursor')) {
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            cursor.style.cssText = 'color: #22c55e; animation: blink 1s infinite; margin-left: 2px;';
+            cursor.textContent = '|';
+            transcriptionArea.appendChild(cursor);
+            
+            // Add CSS animation for blinking cursor
+            if (!document.getElementById('cursor-animation')) {
+                const style = document.createElement('style');
+                style.id = 'cursor-animation';
+                style.textContent = `
+                    @keyframes blink {
+                        0%, 50% { opacity: 1; }
+                        51%, 100% { opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
     }
 }
 

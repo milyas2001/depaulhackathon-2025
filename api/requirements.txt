@@ -2,6 +2,5 @@ Flask==3.0.0
 Werkzeug==3.0.1
 gunicorn==21.2.0
 python-dotenv==1.0.0
-openrouter==1.0.0
+redis==5.0.1
 requests>=2.28.0
-redis==5.0.1 

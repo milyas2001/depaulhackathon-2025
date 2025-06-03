@@ -13,8 +13,53 @@
     <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <style>
+      .simple-loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+      }
+      .simple-loading-content {
+        background: #303030;
+        padding: 2rem;
+        border-radius: 1rem;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        border: 1px solid #444;
+      }
+      .simple-spinner {
+        width: 40px;
+        height: 40px;
+        margin: 1rem auto;
+        border: 3px solid #444;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
+    <!-- Simple Loading Overlay for Form Submission -->
+    <div id="simpleLoadingOverlay" class="simple-loading-overlay">
+      <div class="simple-loading-content">
+        <div class="simple-spinner"></div>
+        <h3 class="text-white text-lg font-bold mb-2">Processing Transcription</h3>
+        <p class="text-gray-300 text-sm">Preparing your clinical record generation...</p>
+      </div>
+    </div>
+
     <div class="relative flex size-full min-h-screen flex-col bg-[#141414] dark group/design-root overflow-x-hidden" style='font-family: Manrope, "Noto Sans", sans-serif;'>
       <div class="layout-container flex h-full grow flex-col">
         <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#303030] px-10 py-3">
@@ -31,8 +76,8 @@
           </div>
           <div class="flex flex-1 justify-end gap-8">
             <div class="flex items-center gap-9">
-              <a class="text-white text-sm font-medium leading-normal" href="/">Dashboard</a>
-              <a class="text-white text-sm font-medium leading-normal" href="/patients">Patients</a>
+              <a class="text-white text-sm font-medium leading-normal" href="{{ url_for('dashboard') }}">Dashboard</a>
+              <a class="text-white text-sm font-medium leading-normal" href="{{ url_for('patients_page') }}">Patients</a>
               <a class="text-white text-sm font-medium leading-normal" href="#">Appointments</a>
               <a class="text-white text-sm font-medium leading-normal" href="#">Billing</a>
             </div>
@@ -42,34 +87,123 @@
           <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
             <div class="flex flex-wrap justify-between gap-3 p-4">
               <div class="flex min-w-72 flex-col gap-3">
-                <p class="text-white tracking-light text-[32px] font-bold leading-tight">Review Transcription</p>
+                <p class="text-white tracking-light text-[32px] font-bold leading-tight">Review Transcription for {{ patient.name }}</p>
                 <div class="space-y-2">
                   <p class="text-[#ababab] text-sm font-normal leading-normal">Step 1: Review and edit the transcription below for accuracy.</p>
                   <p class="text-[#ababab] text-sm font-normal leading-normal">Step 2: After saving, our AI will generate a professional clinical record that you can further edit.</p>
                 </div>
               </div>
             </div>
-            <div class="flex max-w-full flex-1 items-stretch gap-4 px-4 py-3">
-              <label class="flex flex-col flex-1">
-                <textarea
-                  id="transcriptionText"
-                  style="height: 600px !important; min-height: 600px !important;"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-y-auto rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#303030] focus:border-none h-[600px] placeholder:text-[#ababab] p-4 text-base font-normal leading-normal"
-                  placeholder="Your transcription will appear here for editing..."
-                ></textarea>
-              </label>
-            </div>
-            <div class="flex px-4 py-3 justify-end">
-              <button
-                id="saveTranscription"
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-black text-white text-sm font-bold leading-normal tracking-[0.015em]"
-              >
-                <span class="truncate">Save & Generate Clinical Record</span>
-              </button>
-            </div>
+            
+            <form method="POST" action="{{ url_for('transcription_page', patient_id=patient.id) }}" id="transcriptionForm">
+              <div class="flex max-w-full flex-1 items-stretch gap-4 px-4 py-3">
+                <label class="flex flex-col flex-1">
+                  <textarea
+                    id="transcriptionText"
+                    name="transcription"
+                    style="height: 600px !important; min-height: 600px !important;"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-y-auto rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#303030] focus:border-none h-[600px] placeholder:text-[#ababab] p-4 text-base font-normal leading-normal"
+                    placeholder="Your transcription will appear here for editing..."
+                  ></textarea>
+                </label>
+              </div>
+              <div class="flex px-4 py-3 justify-end">
+                <button
+                  type="submit"
+                  id="saveTranscription"
+                  class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-black text-white text-sm font-bold leading-normal tracking-[0.015em]"
+                >
+                  <span class="truncate">Save & Generate Clinical Record</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
     </div>
+    
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('🔍 DOMContentLoaded: transcription.html script v2 running.');
+
+        const transcriptionTextarea = document.getElementById('transcriptionText');
+        const form = document.getElementById('transcriptionForm');
+        const submitButton = document.getElementById('saveTranscription');
+        const simpleLoadingOverlay = document.getElementById('simpleLoadingOverlay');
+
+        if (!transcriptionTextarea) console.error('❌ CRITICAL: transcriptionTextarea not found!');
+        if (!form) console.error('❌ CRITICAL: transcriptionForm not found!');
+        if (!submitButton) console.error('❌ CRITICAL: saveTranscription button not found!');
+        if (!simpleLoadingOverlay) console.error('❌ CRITICAL: simpleLoadingOverlay not found!');
+
+        const savedTranscription = localStorage.getItem('transcription');
+        
+        if (transcriptionTextarea) {
+            if (savedTranscription) {
+                transcriptionTextarea.value = savedTranscription;
+                console.log('✅ Loaded transcription from localStorage.');
+            } else if (!transcriptionTextarea.value.trim()) {
+                transcriptionTextarea.value = "Patient consultation and examination performed. Please edit this text with actual transcription.";
+                console.log('✅ Added default transcription text.');
+            }
+        }
+        
+        if (form && submitButton && transcriptionTextarea && simpleLoadingOverlay) {
+          submitButton.addEventListener('click', (e) => {
+            console.log('🖱️ Submit button CLICKED. Inline handler in transcription.html taking control.');
+            e.preventDefault(); // Stop default button action AND form submission via button click.
+            e.stopImmediatePropagation(); // Stop other click listeners on this button (e.g., from main.js).
+            console.log('🛑 Default click action and other listeners stopped.');
+
+            // Show overlay immediately
+            simpleLoadingOverlay.style.display = 'flex';
+            console.log('✅ Attempted to display simpleLoadingOverlay from CLICK handler.');
+
+            const transcriptionValue = transcriptionTextarea.value.trim();
+            
+            if (!transcriptionValue) {
+              alert('Please enter some transcription text before proceeding.');
+              simpleLoadingOverlay.style.display = 'none'; 
+              submitButton.disabled = false; 
+              // Reset button text, as main.js might not have run or might have changed it
+              submitButton.innerHTML = '<span class="truncate">Save & Generate Clinical Record</span>';
+              console.log('⚠️ Validation failed: Transcription text empty. Overlay hidden, button reset.');
+              return; 
+            }
+            
+            console.log('✅ Validation passed from CLICK handler.');
+            
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="truncate">Processing... (Inline Script)</span>'; 
+            console.log('✅ Submit button disabled and text updated by CLICK handler.');
+            
+            localStorage.removeItem('transcription');
+            console.log('🗑️ Cleared transcription from localStorage by CLICK handler.');
+            
+            try {
+                console.log('➡️ Attempting to submit form programmatically via form.requestSubmit()...');
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit(); // Preferred way, triggers form submit event and validation.
+                } else {
+                    // Fallback for older browsers, directly calls submit but bypasses some event handlers/validation
+                    console.warn('⚠️ form.requestSubmit() not available, using form.submit() as fallback.');
+                    form.submit(); 
+                }
+                console.log('✅ Form submission initiated by CLICK handler. Browser should navigate.');
+            } catch (submitError) {
+                console.error('❌ CRITICAL ERROR during programmatic form submission:', submitError);
+                alert('A critical error occurred while submitting the form. Please check the console.');
+                simpleLoadingOverlay.style.display = 'none';
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<span class="truncate">Save & Generate Clinical Record</span>';
+            }
+          });
+        } else {
+            console.error('❌ One or more critical elements not found. Submit button CLICK handler NOT attached.');
+        }
+        
+        console.log('🔍 Transcription page inline script v2 initialization complete.');
+      });
+    </script>
   </body>
 </html>

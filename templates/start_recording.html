@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    />
+
+    <title>Dental Notes - Start Recording</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+      body {
+        font-family: Manrope, "Noto Sans", sans-serif;
+        background-color: #141414;
+      }
+    </style>
+    <script>
+      // Tab switching functionality
+      function showTab(tab) {
+        const existingSection = document.getElementById('existingPatientSection');
+        const newSection = document.getElementById('newPatientSection');
+        const existingTab = document.getElementById('existingPatientTab');
+        const newTab = document.getElementById('newPatientTab');
+        const patientIdField = document.getElementById('patient_id');
+        const newPatientField = document.getElementById('new_patient_name');
+        const newPatientIdField = document.getElementById('new_patient_id');
+        
+        if (tab === 'existing') {
+          existingSection.style.display = 'block';
+          newSection.style.display = 'none';
+          existingTab.classList.add('bg-[#0a0a0a]', 'text-white');
+          existingTab.classList.remove('text-gray-400');
+          newTab.classList.remove('bg-[#0a0a0a]', 'text-white');
+          newTab.classList.add('text-gray-400');
+          patientIdField.focus();
+          // Clear the new patient fields
+          newPatientField.value = '';
+          if (newPatientIdField) newPatientIdField.value = '';
+        } else {
+          existingSection.style.display = 'none';
+          newSection.style.display = 'block';
+          newTab.classList.add('bg-[#0a0a0a]', 'text-white');
+          newTab.classList.remove('text-gray-400');
+          existingTab.classList.remove('bg-[#0a0a0a]', 'text-white');
+          existingTab.classList.add('text-gray-400');
+          newPatientField.focus();
+          // Reset the patient_id selector
+          patientIdField.selectedIndex = 0;
+        }
+      }
+      
+      // When document is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        // Check if we need to show new patient tab
+        const initialTab = document.body.getAttribute('data-initial-tab') || 'existing';
+        showTab(initialTab);
+        
+        // URL parameter can override
+        const urlParams = new URLSearchParams(window.location.search);
+        const newParam = urlParams.get('new');
+        if (newParam === 'true') {
+          showTab('new');
+        }
+        
+        // Add form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+          const patientIdField = document.getElementById('patient_id');
+          const newPatientField = document.getElementById('new_patient_name');
+          const newPatientIdField = document.getElementById('new_patient_id');
+          const existingSection = document.getElementById('existingPatientSection');
+          
+          // Check which tab is active
+          if (existingSection.style.display !== 'none') {
+            // Existing patient tab is active
+            if (patientIdField.value === '') {
+              e.preventDefault();
+              alert('Please select an existing patient');
+            }
+          } else {
+            // New patient tab is active
+            if (newPatientField.value.trim() === '') {
+              e.preventDefault();
+              alert('Please enter a name for the new patient');
+              return;
+            }
+            if (newPatientIdField.value.trim() === '') {
+              e.preventDefault();
+              alert('Please enter a patient ID');
+              return;
+            }
+            
+            // Validate patient ID format
+            const patientId = newPatientIdField.value.trim();
+            if (patientId.length < 3) {
+              e.preventDefault();
+              alert('Patient ID must be at least 3 characters long');
+              return;
+            }
+            if (patientId.length > 50) {
+              e.preventDefault();
+              alert('Patient ID must be 50 characters or less');
+              return;
+            }
+            if (!/^[a-zA-Z0-9_-]+$/.test(patientId)) {
+              e.preventDefault();
+              alert('Patient ID can only contain letters, numbers, hyphens, and underscores');
+              return;
+            }
+          }
+        });
+
+        // Real-time validation for patient ID
+        const newPatientIdField = document.getElementById('new_patient_id');
+        const patientIdFeedback = document.getElementById('patient-id-feedback');
+        
+        if (newPatientIdField && patientIdFeedback) {
+          newPatientIdField.addEventListener('input', function() {
+            const patientId = this.value.trim();
+            
+            // Clear previous feedback
+            patientIdFeedback.classList.add('hidden');
+            this.classList.remove('border-red-500', 'border-green-500');
+            
+            if (patientId === '') {
+              return;
+            }
+            
+            // Check format
+            if (patientId.length < 3) {
+              showIdFeedback('Must be at least 3 characters long', 'error');
+              return;
+            }
+            
+            if (patientId.length > 50) {
+              showIdFeedback('Must be 50 characters or less', 'error');
+              return;
+            }
+            
+            if (!/^[a-zA-Z0-9_-]+$/.test(patientId)) {
+              showIdFeedback('Can only contain letters, numbers, hyphens, and underscores', 'error');
+              return;
+            }
+            
+            showIdFeedback('Format is valid', 'success');
+          });
+        }
+        
+        function showIdFeedback(message, type) {
+          const feedback = document.getElementById('patient-id-feedback');
+          const input = document.getElementById('new_patient_id');
+          
+          if (feedback && input) {
+            feedback.textContent = message;
+            feedback.classList.remove('hidden', 'text-red-400', 'text-green-400');
+            input.classList.remove('border-red-500', 'border-green-500');
+            
+            if (type === 'error') {
+              feedback.classList.add('text-red-400');
+              input.classList.add('border-red-500');
+            } else if (type === 'success') {
+              feedback.classList.add('text-green-400');
+              input.classList.add('border-green-500');
+            }
+            
+            feedback.classList.remove('hidden');
+          }
+        }
+      });
+    </script>
+  </head>
+  <body class="bg-[#141414] text-white min-h-screen" data-initial-tab="{% if focus_new_patient %}new{% else %}existing{% endif %}">
+    <!-- Navigation -->
+    <nav class="bg-[#0a0a0a] border-b border-gray-800">
+      <div class="container mx-auto px-6 py-3">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <a href="{{ url_for('dashboard') }}" class="text-xl font-bold">Dental Notes</a>
+          </div>
+          <div class="flex items-center space-x-4">
+            <a href="{{ url_for('dashboard') }}" class="px-3 py-1 rounded-lg bg-transparent border border-gray-700 hover:bg-gray-800 text-sm transition">Dashboard</a>
+            <a href="{{ url_for('logout') }}" class="px-3 py-1 rounded-lg bg-transparent border border-gray-700 hover:bg-gray-800 text-sm transition">Sign Out</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8">
+      <div class="flex items-center mb-8">
+        <a href="{{ url_for('dashboard') }}" class="mr-3 text-gray-400 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold">Start Recording</h1>
+      </div>
+
+      {% if error %}
+      <div class="bg-red-900/50 border border-red-500 text-red-100 px-4 py-3 rounded-lg mb-6">
+        <p>{{ error }}</p>
+      </div>
+      {% endif %}
+
+      <div class="bg-[#1a1a1a] rounded-xl p-6 border border-gray-800 mb-8">
+        <h2 class="text-xl font-bold mb-6">Select Patient</h2>
+        
+        <form method="POST" action="{{ url_for('start_recording') }}">
+          <!-- Tab navigation for selection method -->
+          <div class="flex mb-6 bg-[#303030] p-1 rounded-lg">
+            <button 
+              type="button" 
+              id="existingPatientTab" 
+              class="py-2 px-4 rounded-lg transition flex-1 text-center {{ 'bg-[#0a0a0a] text-white' if not focus_new_patient else 'text-gray-400' }}"
+              onclick="showTab('existing')"
+            >
+              Existing Patient
+            </button>
+            <button 
+              type="button" 
+              id="newPatientTab" 
+              class="py-2 px-4 rounded-lg transition flex-1 text-center {{ 'bg-[#0a0a0a] text-white' if focus_new_patient else 'text-gray-400' }}"
+              onclick="showTab('new')"
+            >
+              New Patient
+            </button>
+          </div>
+          
+          <div id="existingPatientSection" class="mb-6">
+            <label for="patient_id" class="block text-sm font-medium text-gray-300 mb-2">Choose Existing Patient</label>
+            <select 
+              id="patient_id" 
+              name="patient_id" 
+              class="w-full px-4 py-3 bg-[#303030] border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+              {% if focus_new_patient %}tabindex="-1"{% endif %}
+            >
+              <option value="">-- Select a patient --</option>
+              {% for patient in patients %}
+                <option value="{{ patient.id }}">{{ patient.name }} (ID: {{ patient.id[:8] }})</option>
+              {% endfor %}
+            </select>
+            <p class="text-xs text-gray-400 mt-1">The patient ID will be automatically generated for new patients</p>
+          </div>
+          
+          <div id="newPatientSection" class="mb-8">
+            <label class="block text-sm font-medium text-gray-300 mb-4">Add New Patient</label>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="new_patient_name" class="block text-sm font-medium text-gray-300 mb-2">Patient Name *</label>
+                <input 
+                  type="text" 
+                  id="new_patient_name" 
+                  name="new_patient_name" 
+                  class="w-full px-4 py-3 bg-[#303030] border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  placeholder="Enter patient name" 
+                  {% if focus_new_patient %}autofocus{% endif %}
+                  required
+                >
+              </div>
+              
+              <div>
+                <label for="new_patient_id" class="block text-sm font-medium text-gray-300 mb-2">Patient ID *</label>
+                <input 
+                  type="text" 
+                  id="new_patient_id" 
+                  name="new_patient_id" 
+                  class="w-full px-4 py-3 bg-[#303030] border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  placeholder="Enter unique patient ID" 
+                  required
+                  pattern="[a-zA-Z0-9_-]+"
+                  minlength="3"
+                  maxlength="50"
+                  title="Patient ID must be 3-50 characters long and contain only letters, numbers, hyphens, and underscores"
+                >
+                <div id="patient-id-feedback" class="text-xs mt-1 hidden"></div>
+              </div>
+            </div>
+            
+            <p class="text-xs text-gray-400 mt-2">Both fields are required. Patient ID must be unique.</p>
+          </div>
+          
+          <div class="flex justify-end">
+            <button 
+              type="submit"
+              class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-medium transition"
+            >
+              Continue to Recording
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="bg-[#1a1a1a] rounded-xl p-6 border border-gray-800">
+        <h2 class="text-xl font-bold mb-4">What to Expect</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-[#212121] rounded-xl p-5 border border-gray-800">
+            <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4">
+              <span class="text-blue-400 font-bold">1</span>
+            </div>
+            <h3 class="font-bold mb-2">Record Voice</h3>
+            <p class="text-gray-400 text-sm">Record your observations about the patient's dental examination.</p>
+          </div>
+          
+          <div class="bg-[#212121] rounded-xl p-5 border border-gray-800">
+            <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4">
+              <span class="text-blue-400 font-bold">2</span>
+            </div>
+            <h3 class="font-bold mb-2">AI Processing</h3>
+            <p class="text-gray-400 text-sm">Our AI converts your voice recording into structured clinical notes.</p>
+          </div>
+          
+          <div class="bg-[#212121] rounded-xl p-5 border border-gray-800">
+            <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4">
+              <span class="text-blue-400 font-bold">3</span>
+            </div>
+            <h3 class="font-bold mb-2">Review & Save</h3>
+            <p class="text-gray-400 text-sm">Review the generated clinical note, make any edits, and save to the patient's record.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html> 

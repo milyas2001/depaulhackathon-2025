@@ -1,32 +1,325 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dental Documentation Assistant</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    />
+
+    <title>Dental Notes - AI-Powered Clinical Documentation</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+      body {
+        font-family: Manrope, "Noto Sans", sans-serif;
+      }
+      .hero-gradient {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%);
+      }
+      .hero-bg {
+        background-image: url('https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=2070&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+      }
+      .feature-card {
+        background: rgba(48, 48, 48, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      .feature-card:hover {
+        transform: translateY(-5px);
+        background: rgba(48, 48, 48, 0.9);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1);
+      }
+      .feature-card.animate-in {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .feature-icon {
+        transition: all 0.3s ease;
+      }
+      .feature-card:hover .feature-icon {
+        transform: scale(1.1);
+        background: #3b82f6;
+      }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Dental Documentation Assistant</h1>
-        <p>Speak or type your dental notes below:</p>
+  <body class="bg-[#141414] text-white">
+    <!-- Hero Section -->
+    <section class="hero-bg min-h-screen flex flex-col">
+      <div class="hero-gradient flex-1 flex flex-col">
+        <!-- Navigation -->
+        <nav class="container mx-auto px-6 py-6 flex justify-between items-center">
+          <div class="flex items-center">
+            <span class="text-2xl font-bold">Dental Notes</span>
+          </div>
+          <div class="flex items-center space-x-4">
+            <a href="{{ url_for('login') }}" class="px-4 py-2 rounded-lg bg-transparent border border-white/30 hover:bg-white/10 transition">Sign In</a>
+            <a href="{{ url_for('register') }}" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition">Register</a>
+          </div>
+        </nav>
         
-        <form id="noteForm" method="POST" action="/process_audio" enctype="multipart/form-data">
-            <textarea id="text_input" name="text_input" rows="4" cols="50" placeholder="Type your notes here..."></textarea>
-            <br><br>
-            <label for="audio_data">Or upload an audio file:</label>
-            <input type="file" id="audio_data" name="audio_data" accept="audio/*">
-            <br><br>
-            <button type="button" onclick="startRecording()" id="recordButton">Start Recording</button>
-            <button type="button" onclick="stopRecording()" id="stopButton" disabled>Stop Recording</button>
-            <br><br>
-            <button type="submit">Generate Formal Note</button>
-        </form>
+        <!-- Hero Content -->
+        <div class="container mx-auto px-6 flex-1 flex flex-col md:flex-row items-center justify-center md:justify-between py-12">
+          <div class="md:w-1/2 mb-10 md:mb-0">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+              <span id="main-title-typewriter"></span>
+              <span id="cursor" class="animate-pulse">|</span>
+            </h1>
+            <p class="text-xl text-gray-300 mb-8">Transform your voice recordings into professional clinical notes instantly with our advanced AI technology.</p>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+              <a href="{{ url_for('register') }}" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-center font-bold">Get Started</a>
+              <a href="#features" class="px-8 py-4 bg-transparent border border-white/30 hover:bg-white/10 rounded-xl text-center">Learn More</a>
+            </div>
+          </div>
+          <div class="md:w-2/5">
+            <div class="bg-[#212121] p-6 rounded-2xl border border-gray-700 shadow-xl">
+              <div class="flex items-center mb-4">
+                <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <div class="bg-[#303030] rounded-xl p-4 text-sm font-mono">
+                <p class="text-green-400">// Example of AI-generated clinical note</p>
+                <div id="typewriter-content">
+                  <!-- Content will be dynamically added here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features" class="py-12 bg-[#0a0a0a]">
+      <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-bold text-center mb-12">Why Choose Dental Notes</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div class="feature-card rounded-2xl p-6 animate-in">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4 feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Save Time</h3>
+            <p class="text-gray-400">Convert voice recordings to professional clinical notes in seconds, not hours.</p>
+          </div>
+          
+          <!-- Feature 2 -->
+          <div class="feature-card rounded-2xl p-6 animate-in">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4 feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Enhanced Accuracy</h3>
+            <p class="text-gray-400">AI-powered documentation with proper dental notation and terminology.</p>
+          </div>
+          
+          <!-- Feature 3 -->
+          <div class="feature-card rounded-2xl p-6 animate-in">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4 feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Secure Storage</h3>
+            <p class="text-gray-400">All patient data is securely stored and accessible from anywhere.</p>
+          </div>
+          
+          <!-- Feature 4 -->
+          <div class="feature-card rounded-2xl p-6 animate-in">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4 feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Voice to Text</h3>
+            <p class="text-gray-400">Record your observations and let our AI convert them to structured notes.</p>
+          </div>
+          
+          <!-- Feature 5 -->
+          <div class="feature-card rounded-2xl p-6 animate-in">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4 feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Patient Management</h3>
+            <p class="text-gray-400">Organize all your patients and their clinical records in one place.</p>
+          </div>
 
-        <h2>Formatted Note:</h2>
-        <pre id="formatted_note_output">Your formatted note will appear here.</pre>
-    </div>
+          <!-- Feature 6 -->
+          <div class="feature-card rounded-2xl p-6 animate-in">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4 feature-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Easy Review</h3>
+            <p class="text-gray-400">Review and edit AI-generated notes before finalizing clinical records.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="py-12 bg-[#141414]">
+      <div class="container mx-auto px-6 text-center">
+        <h2 class="text-3xl font-bold mb-6">Ready to streamline your dental documentation?</h2>
+        <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">Join thousands of dental professionals who are saving time and improving accuracy with Dental Notes.</p>
+        <a href="{{ url_for('register') }}" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-center font-bold inline-block">Create Your Account</a>
+      </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-[#0a0a0a] py-10">
+      <div class="container mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-6 md:mb-0">
+            <p class="text-gray-500">&copy; 2025 Dental Notes. All rights reserved.</p>
+          </div>
+          <div class="flex space-x-6">
+            <a href="#" class="text-gray-500 hover:text-white">Privacy Policy</a>
+            <a href="#" class="text-gray-500 hover:text-white">Terms of Service</a>
+            <a href="#" class="text-gray-500 hover:text-white">Contact</a>
+          </div>
+        </div>
+      </div>
+    </footer>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+      // Typewriter effect for the main title
+      document.addEventListener('DOMContentLoaded', function() {
+        const mainTitleElement = document.getElementById('main-title-typewriter');
+        const cursorElement = document.getElementById('cursor');
+        const typewriterContent = document.getElementById('typewriter-content');
+        
+        const mainTitle = "AI-Powered Note Generation for Dentists";
+        let titleIndex = 0;
+        
+        // Function to type the main title
+        function typeMainTitle() {
+          if (titleIndex < mainTitle.length) {
+            mainTitleElement.textContent = mainTitle.substring(0, titleIndex + 1);
+            titleIndex++;
+            
+            // Variable typing speed for realistic effect
+            const typingSpeed = Math.random() * 80 + 50; // 50-130ms
+            setTimeout(typeMainTitle, typingSpeed);
+          } else {
+            // Title complete, hide cursor after a brief pause
+            setTimeout(() => {
+              cursorElement.style.display = 'none';
+            }, 1000);
+          }
+        }
+        
+        // Start main title animation immediately
+        setTimeout(typeMainTitle, 500);
+        
+        // Clinical note typewriter animation (existing code)
+        const lines = [
+          { text: 'CHIEF COMPLAINT:', color: 'text-white', delay: 200 },
+          { text: 'Patient reports sensitivity on upper right molar', color: 'text-gray-300', delay: 50 },
+          { text: '', color: '', delay: 100 }, // Empty line for spacing
+          { text: 'CLINICAL FINDINGS:', color: 'text-white', delay: 200 },
+          { text: '- Decay observed on tooth #3 occlusal surface', color: 'text-gray-300', delay: 50 },
+          { text: '- Moderate inflammation of surrounding gingiva', color: 'text-gray-300', delay: 50 },
+          { text: '', color: '', delay: 100 }, // Empty line for spacing
+          { text: 'TREATMENT PROVIDED:', color: 'text-white', delay: 200 },
+          { text: '- Composite restoration on tooth #3', color: 'text-gray-300', delay: 50 }
+        ];
+        
+        let currentLineIndex = 0;
+        let currentCharIndex = 0;
+        let currentElement = null;
+        
+        function typeNextCharacter() {
+          if (currentLineIndex >= lines.length) {
+            // Animation complete, restart after delay
+            setTimeout(() => {
+              typewriterContent.innerHTML = '';
+              currentLineIndex = 0;
+              currentCharIndex = 0;
+              currentElement = null;
+              setTimeout(typeNextCharacter, 1000); // Reduced restart delay
+            }, 1500); // Reduced completion pause
+            return;
+          }
+          
+          const currentLine = lines[currentLineIndex];
+          
+          // Create new element for this line if needed
+          if (currentCharIndex === 0) {
+            currentElement = document.createElement('p');
+            currentElement.className = currentLine.color + ' mt-2';
+            typewriterContent.appendChild(currentElement);
+            
+            // If it's an empty line, just move to next line immediately
+            if (currentLine.text === '') {
+              currentLineIndex++;
+              currentCharIndex = 0;
+              setTimeout(typeNextCharacter, currentLine.delay);
+              return;
+            }
+          }
+          
+          // Add next character
+          if (currentCharIndex < currentLine.text.length) {
+            currentElement.textContent = currentLine.text.substring(0, currentCharIndex + 1);
+            currentCharIndex++;
+            
+            // Much faster typing speed between 10-25ms for rapid effect
+            const typingSpeed = Math.random() * 15 + 10;
+            setTimeout(typeNextCharacter, typingSpeed);
+          } else {
+            // Line complete, move to next line
+            currentLineIndex++;
+            currentCharIndex = 0;
+            setTimeout(typeNextCharacter, currentLine.delay);
+          }
+        }
+        
+        // Start the clinical note typewriter effect after the main title is complete
+        setTimeout(typeNextCharacter, 4000); // Start after main title finishes
+        
+        // Scroll-triggered animations for feature cards
+        const observerOptions = {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+              // Add staggered delay for each card
+              const delay = index * 150; // 150ms delay between each card
+              setTimeout(() => {
+                entry.target.style.transitionDelay = '0ms';
+                entry.target.classList.add('animate-in');
+              }, delay);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, observerOptions);
+        
+        // Observe all feature cards
+        document.querySelectorAll('.feature-card').forEach((card, index) => {
+          observer.observe(card);
+        });
+      });
+    </script>
 </body>
 </html> 

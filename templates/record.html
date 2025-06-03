@@ -31,8 +31,8 @@
           </div>
           <div class="flex flex-1 justify-end gap-8">
             <div class="flex items-center gap-9">
-              <a class="text-white text-sm font-medium leading-normal" href="/">Dashboard</a>
-              <a class="text-white text-sm font-medium leading-normal" href="/patients">Patients</a>
+              <a class="text-white text-sm font-medium leading-normal" href="{{ url_for('dashboard') }}">Dashboard</a>
+              <a class="text-white text-sm font-medium leading-normal" href="{{ url_for('patients_page') }}">Patients</a>
               <a class="text-white text-sm font-medium leading-normal" href="#">Notes</a>
               <a class="text-white text-sm font-medium leading-normal" href="#">Settings</a>
             </div>
@@ -78,7 +78,7 @@
               </button>
             </div>
             <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Real-time Transcription</h2>
-            <div class="real-time-transcription text-white text-base font-normal leading-normal pb-3 pt-1 px-4 min-h-[100px] bg-[#212121] rounded-xl mx-4 p-4">
+            <div id="transcriptionArea" class="real-time-transcription text-white text-base font-normal leading-normal pb-3 pt-1 px-4 min-h-[100px] bg-[#212121] rounded-xl mx-4 p-4">
               Your transcription will appear here as you speak...
             </div>
           </div>
