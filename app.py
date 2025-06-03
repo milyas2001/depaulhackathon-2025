@@ -9,8 +9,7 @@ import sys
 import json
 import traceback
 from pathlib import Path
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
+import requests
 import re
 
 # Configure logging
@@ -34,6 +33,10 @@ Session(app)  # Initialize Flask-Session
 # Load environment variables
 load_dotenv()
 
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+if not OPENROUTER_API_KEY:
+    logger.warning("OPENROUTER_API_KEY not found in environment variables")
+
 # Global variables for lazy loading
 model = None
 tokenizer = None
@@ -50,8 +53,8 @@ def load_model_if_needed():
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logger.info(f"Using device: {device}")
             
-            # Use a smaller model for better performance
-            model_name = "deepseek-ai/deepseek-coder-1.3b-instruct"
+            # Use the correct DeepSeek model for text generation
+            model_name = "deepseek-ai/deepseek-llm-7b-chat"  # Changed to language model
             logger.info(f"Attempting to load model: {model_name}")
             
             logger.info("Loading tokenizer...")
@@ -66,6 +69,41 @@ def load_model_if_needed():
                 device_map="auto",
                 load_in_8bit=True
             )
+            
+            # Initialize the model with dental context
+            system_prompt = """You are an expert dental professional with years of experience in clinical documentation.
+            Your expertise includes:
+            - Proper dental terminology and notation
+            - Clinical examination procedures
+            - Treatment planning
+            - Patient care documentation
+            - Medical history interpretation
+            - Dental emergency protocols
+            
+            You excel at:
+            1. Converting informal dental notes to formal clinical documentation
+            2. Identifying key dental conditions and treatments
+            3. Maintaining professional medical language
+            4. Ensuring comprehensive documentation
+            5. Following dental charting standards
+            
+            Always format tooth numbers as '#X' where X is the tooth number.
+            Use standard dental abbreviations when appropriate.
+            Include all relevant clinical findings and observations."""
+            
+            try:
+                # Prime the model with dental context
+                inputs = tokenizer(system_prompt, return_tensors="pt").to(model.device)
+                _ = model.generate(
+                    inputs.input_ids,
+                    max_length=200,
+                    temperature=0.7,
+                    do_sample=False
+                )
+                logger.info("Model successfully primed with dental context")
+            except Exception as e:
+                logger.warning(f"Could not prime model with dental context: {str(e)}")
+            
             logger.info("Model loaded successfully!")
             return True
         except Exception as e:
@@ -132,77 +170,131 @@ def preprocess_transcription(transcription):
     return {k: sorted(v) if isinstance(v, set) else v for k, v in info.items()}
 
 def generate_clinical_note(transcription, patient_name):
-    """Generate a clinical note using DeepSeek AI model."""
+    """Generate a clinical note using Qwen3 8B through OpenRouter."""
     try:
-        if not load_model_if_needed():
-            logger.warning("DeepSeek model not available, falling back to template...")
+        if not OPENROUTER_API_KEY:
+            logger.warning("OpenRouter API key not available, falling back to template...")
             return generate_basic_note(transcription, patient_name)
 
-        # Create a detailed prompt for the AI model
-        prompt = f"""You are an expert dental professional tasked with converting informal dental notes into a formal clinical record.
+        # Create a focused prompt for the clinical note
+        prompt = f"""Task: Convert an informal dental transcription into a formal clinical note.
+
+Context: You are an expert dental professional with extensive experience in clinical documentation. Use proper dental terminology, maintain professional medical language, and ensure comprehensive documentation.
+
+Guidelines:
+1. Use standard dental notation (e.g., tooth #14 for tooth number 14)
+2. Include all clinical findings and observations
+3. Document medications with proper dosages
+4. Specify clear follow-up instructions
+5. Maintain professional medical terminology
+6. Use clean formatting without asterisks or other special characters
 
 Input Transcription:
 {transcription}
 
-Task: Generate a detailed, professional clinical note following these guidelines:
-1. Use proper dental terminology
-2. Structure the note with these sections:
-   - Chief Complaint/Presentation
-   - Clinical Examination
-   - Diagnosis
-   - Treatment Performed/Plan
-   - Post-operative Instructions
-3. Extract and include:
-   - Tooth numbers (format as '#X' where X is the number)
-   - Symptoms and their severity
-   - Clinical findings
-   - Procedures performed
-   - Treatment recommendations
-4. Maintain a professional, clinical tone
-5. Include relevant warnings and follow-up instructions
+Format the note exactly as follows:
 
-Format the note with proper headers and dates. Return only the formatted clinical note.
-"""
-
-        # Generate the note using DeepSeek
-        logger.info("Generating clinical note with DeepSeek...")
-        try:
-            inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-            outputs = model.generate(
-                inputs.input_ids,
-                max_length=1000,
-                temperature=0.7,
-                top_p=0.95,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
-            )
-            clinical_note = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            
-            # Extract the actual note from the model's response
-            # (removing any potential prefixes/suffixes from the model)
-            note_start = clinical_note.find("DENTAL CLINICAL NOTE")
-            if note_start == -1:
-                # If the model didn't include our header, add it
-                current_date = datetime.now().strftime("%B %d, %Y")
-                current_time = datetime.now().strftime("%I:%M %p")
-                header = f"""DENTAL CLINICAL NOTE
-Date: {current_date}
-Time: {current_time}
+DENTAL CLINICAL NOTE
+Date: {datetime.now().strftime("%B %d, %Y")}
+Time: {datetime.now().strftime("%I:%M %p")}
 Patient: {patient_name}
 
-"""
-                clinical_note = header + clinical_note
+CHIEF COMPLAINT:
+[Patient's primary concern]
 
-            logger.info("Successfully generated clinical note with DeepSeek")
-            return clinical_note
+CLINICAL FINDINGS:
+- [First finding]
+- [Additional findings listed with bullet points]
 
-        except Exception as e:
-            logger.error(f"Error during DeepSeek generation: {str(e)}")
+TREATMENT PROVIDED:
+- [First treatment]
+- [Additional treatments listed with bullet points]
+
+MEDICATIONS:
+[List medications or "None prescribed."]
+
+FOLLOW-UP:
+- [First instruction]
+- [Additional instructions listed with bullet points]
+
+Provider: {session.get('dentist_name', 'Doctor')}
+
+Note: This clinical note was generated with AI assistance. Please verify all information for accuracy."""
+
+        # Call OpenRouter API with Qwen3 8B
+        try:
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "HTTP-Referer": "https://github.com/your-repo",  # Replace with your actual site
+                "X-Title": "Dental Documentation Assistant"  # Your app name
+            }
+            
+            data = {
+                "model": "qwen/qwen3-8b:free",
+                "messages": [
+                    {
+                        "role": "system", 
+                        "content": "You are an expert dental professional assistant specializing in clinical documentation. Format notes cleanly without asterisks or special characters. Use bullet points with hyphens (-) for lists."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.3,
+                "max_tokens": 1000
+            }
+            
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=data
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result and "choices" in result and len(result["choices"]) > 0:
+                    clinical_note = result["choices"][0]["message"]["content"]
+                    
+                    # Extract the clinical note part
+                    note_start = clinical_note.find("DENTAL CLINICAL NOTE")
+                    if note_start != -1:
+                        clinical_note = clinical_note[note_start:]
+
+                    # Ensure all required sections are present and properly formatted
+                    sections = [
+                        "CHIEF COMPLAINT:",
+                        "CLINICAL FINDINGS:",
+                        "TREATMENT PROVIDED:",
+                        "MEDICATIONS:",
+                        "FOLLOW-UP:"
+                    ]
+
+                    # Add missing sections and ensure proper formatting
+                    for section in sections:
+                        if section not in clinical_note:
+                            clinical_note += f"\n\n{section}\nNone documented."
+                        else:
+                            clinical_note = clinical_note.replace(section, f"\n\n{section}")
+
+                    # Post-process the note to ensure proper formatting
+                    clinical_note = re.sub(r'tooth (\d+)', r'tooth #\1', clinical_note, flags=re.IGNORECASE)
+                    clinical_note = re.sub(r'#(\d+)', r'#\1', clinical_note)
+                    
+                    # Add verification notice only if it's not already present
+                    verification_note = "Note: This clinical note was generated with AI assistance. Please verify all information for accuracy."
+                    if verification_note not in clinical_note:
+                        clinical_note += f"\n\n{verification_note}"
+
+                    logger.info("Successfully generated clinical note with Qwen3 8B")
+                    return clinical_note.strip()
+            
+            logger.error(f"Error from OpenRouter API: {response.text}")
             return generate_basic_note(transcription, patient_name)
-
+                
+        except Exception as e:
+            logger.error(f"Error calling OpenRouter API: {str(e)}")
+            return generate_basic_note(transcription, patient_name)
+            
     except Exception as e:
         logger.error(f"Error in generate_clinical_note: {str(e)}")
-        logger.error(f"Full traceback: {traceback.format_exc()}")
         return generate_basic_note(transcription, patient_name)
 
 def generate_basic_note(transcription, patient_name):
@@ -718,25 +810,12 @@ def generate_clinical_record():
         transcription = current_note_data['transcription']
         logger.info(f"Found transcription to process: {transcription}")
         
-        # Generate the clinical note using our preprocessing and structured generation
-        clinical_record = generate_clinical_note(transcription, current_patient.get('name', 'Patient'))
-        
-        if clinical_record:
-            # Store the generated note
-            current_note_data['clinical_record'] = clinical_record
-            current_note_data['status'] = 'processed'
-            session['current_note_data'] = current_note_data
-            session.modified = True
-            logger.info("Clinical record saved to session")
-            
-            logger.info("=== Completed clinical record generation ===")
-            return render_template('clinicalrecord.html', 
-                                patient=current_patient,
-                                clinical_record=clinical_record)
-        else:
-            logger.error("Failed to generate clinical note")
-            return redirect(url_for('transcription'))
-        
+        # First render the template with an empty clinical record
+        # This will ensure the loading animation is displayed
+        return render_template('clinicalrecord.html', 
+                            patient=current_patient,
+                            clinical_record="",
+                            show_loading=True)
     except Exception as e:
         logger.error(f"Error in generate_clinical_record: {str(e)}")
         logger.error(f"Full traceback: {traceback.format_exc()}")
@@ -838,6 +917,67 @@ def process_transcription():
         })
     except Exception as e:
         logger.error(f"Error in process_transcription: {str(e)}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/test-note-generation')
+def test_note_generation():
+    """Test route for clinical note generation."""
+    sample_transcription = """
+    yeah so the patient came in today complaining of severe pain in tooth number 14 upper right first molar 
+    did examination found deep decay extending close to pulp patient also reported sensitivity to cold and hot 
+    took xrays showed clear radiolucency we discussed treatment options decided on doing a filling today 
+    administered local anesthetic 2 carpules of lidocaine removed decay placed base and composite filling 
+    prescribed ibuprofen 600mg for pain management follow up in 2 weeks if symptoms persist may need root canal
+    """
+    
+    try:
+        clinical_note = generate_clinical_note(sample_transcription.strip(), "Test Patient")
+        return render_template('test_note.html', clinical_note=clinical_note)
+    except Exception as e:
+        logger.error(f"Error in test generation: {str(e)}")
+        return str(e), 500
+
+@app.route('/api/generate-note', methods=['POST'])
+def api_generate_note():
+    try:
+        logger.info("=== Starting API clinical note generation ===")
+        current_patient = session.get('current_patient')
+        current_note_data = session.get('current_note_data')
+        
+        if not current_patient:
+            logger.error("No patient selected")
+            return jsonify({'error': 'No patient selected'}), 400
+            
+        if not current_note_data or not current_note_data.get('transcription'):
+            logger.error("No transcription data found")
+            return jsonify({'error': 'No transcription data found'}), 400
+        
+        transcription = current_note_data['transcription']
+        logger.info(f"Found transcription to process: {transcription}")
+        
+        # Generate the clinical note using our preprocessing and structured generation
+        clinical_record = generate_clinical_note(transcription, current_patient.get('name', 'Patient'))
+        
+        if clinical_record:
+            # Store the generated note
+            current_note_data['clinical_record'] = clinical_record
+            current_note_data['status'] = 'processed'
+            session['current_note_data'] = current_note_data
+            session.modified = True
+            logger.info("Clinical record saved to session")
+            
+            logger.info("=== Completed clinical record generation ===")
+            return jsonify({
+                'success': True,
+                'clinical_record': clinical_record
+            })
+        else:
+            logger.error("Failed to generate clinical note")
+            return jsonify({'error': 'Failed to generate clinical note'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in api_generate_note: {str(e)}")
         logger.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
